@@ -1,0 +1,23 @@
+# Normalize line endings and prefer LF in repo
+# Default: detect text files and normalize
+* text=auto
+
+# Force LF for common source formats (helpful for cross-platform projects)
+*.js text eol=lf
+*.jsx text eol=lf
+*.ts text eol=lf
+*.tsx text eol=lf
+*.json text eol=lf
+*.css text eol=lf
+*.html text eol=lf
+*.md text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+
+# Keep binary files as binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary

@@ -5,6 +5,9 @@ import { getEmployees } from "../services/api";
 function Attendance({ token }) {
   const navigate = useNavigate();
 
+  // fallback to localStorage token if parent didn't pass it
+  const effectiveToken = token ?? localStorage.getItem("token");
+
   const [employees, setEmployees] = useState([]);
   const [selectedEmployee, setSelectedEmployee] = useState("");
   const [date, setDate] = useState("");
@@ -19,7 +22,7 @@ function Attendance({ token }) {
   useEffect(() => {
     const loadEmployees = async () => {
       try {
-        const data = await getEmployees(token);
+        const data = await getEmployees(effectiveToken);
         if (Array.isArray(data.employees)) {
           setEmployees(data.employees);
         }
@@ -28,8 +31,8 @@ function Attendance({ token }) {
       }
     };
 
-    loadEmployees();
-  }, [token]);
+    if (effectiveToken) loadEmployees();
+  }, [effectiveToken]);
 
   // =============================
   // FETCH ATTENDANCE HISTORY
@@ -42,7 +45,7 @@ function Attendance({ token }) {
         `http://localhost:5000/api/attendance?employee=${employeeId}`,
         {
           headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${effectiveToken}`,
           },
         }
       );
@@ -82,7 +85,7 @@ function Attendance({ token }) {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${effectiveToken}`,
           },
           body: JSON.stringify({
             employee: selectedEmployee,
@@ -109,88 +112,106 @@ function Attendance({ token }) {
   };
 
   return (
-    <div style={{ padding: "20px" }}>
-      <h2>Attendance Management</h2>
+    <div style={styles.container}>
 
-      {/* Navigation */}
-      <button onClick={() => navigate("/")}>
-        Back to Dashboard
-      </button>
+      <div style={styles.pageHeader}>
+        <div>
+          <h2 style={styles.pageTitle}>Attendance</h2>
+          <p style={styles.pageSubtitle}>Mark attendance and review history</p>
+        </div>
+        <div>
+          <button style={styles.backButton} onClick={() => navigate('/')}>Back to Dashboard</button>
+        </div>
+      </div>
 
-      <hr />
+      <div style={styles.grid}>
+        <div style={styles.card}>
+          <h3 style={styles.sectionTitle}>Mark Attendance</h3>
 
-      {/* Employee Selection */}
-      <select
-        value={selectedEmployee}
-        onChange={(e) => setSelectedEmployee(e.target.value)}
-      >
-        <option value="">Select Employee</option>
-        {employees.map((emp) => (
-          <option key={emp._id} value={emp._id}>
-            {emp.name}
-          </option>
-        ))}
-      </select>
+          <div style={styles.formRow}>
+            <label style={styles.label}>Employee</label>
+            <select value={selectedEmployee} onChange={(e) => setSelectedEmployee(e.target.value)} style={styles.select}>
+              <option value="">Select Employee</option>
+              {employees.map((emp) => (
+                <option key={emp._id} value={emp._id}>{emp.name}</option>
+              ))}
+            </select>
+          </div>
 
-      <br /><br />
+          <div style={styles.formRow}>
+            <label style={styles.label}>Date</label>
+            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} style={styles.input} />
+          </div>
 
-      {/* Date Picker */}
-      <input
-        type="date"
-        value={date}
-        onChange={(e) => setDate(e.target.value)}
-      />
+          <div style={styles.formRow}>
+            <label style={styles.label}>Status</label>
+            <select value={status} onChange={(e) => setStatus(e.target.value)} style={styles.select}>
+              <option value="present">Present</option>
+              <option value="absent">Absent</option>
+              <option value="half-day">Half Day</option>
+            </select>
+          </div>
 
-      <br /><br />
+          <div style={{marginTop:12}}>
+            <button onClick={markAttendance} disabled={loading} style={styles.primaryButton}>{loading ? 'Marking...' : 'Mark Attendance'}</button>
+          </div>
+        </div>
 
-      {/* Status Selector */}
-      <select
-        value={status}
-        onChange={(e) => setStatus(e.target.value)}
-      >
-        <option value="present">Present</option>
-        <option value="absent">Absent</option>
-        <option value="half-day">Half Day</option>
-      </select>
+        <div style={styles.card}>
+          <h3 style={styles.sectionTitle}>Attendance History</h3>
 
-      <br /><br />
-
-      {/* Submit Button */}
-      <button onClick={markAttendance} disabled={loading}>
-        {loading ? "Marking..." : "Mark Attendance"}
-      </button>
-
-      <hr />
-
-      {/* Attendance History */}
-      <h3>Attendance History</h3>
-
-      {attendanceRecords.length > 0 ? (
-        <table border="1" cellPadding="8">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Status</th>
-              <th>Marked By</th>
-            </tr>
-          </thead>
-          <tbody>
-            {attendanceRecords.map((record) => (
-              <tr key={record._id}>
-                <td>
-                  {new Date(record.date).toLocaleDateString()}
-                </td>
-                <td>{record.status}</td>
-                <td>{record.markedBy?.name}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      ) : (
-        <p>No attendance records found.</p>
-      )}
+          {attendanceRecords.length > 0 ? (
+            <div style={{overflowX:'auto'}}>
+              <table style={styles.table}>
+                <thead>
+                  <tr>
+                    <th style={styles.th}>Date</th>
+                    <th style={styles.th}>Status</th>
+                    <th style={styles.th}>Marked By</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {attendanceRecords.map((record) => (
+                    <tr key={record._id}>
+                      <td style={styles.td}>{new Date(record.date).toLocaleDateString()}</td>
+                      <td style={styles.td}>{record.status}</td>
+                      <td style={styles.td}>{record.markedBy?.name}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p style={{color:'#6b7280'}}>No attendance records found.</p>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
 
 export default Attendance;
+
+const styles = {
+  container: {
+    backgroundColor: '#EDE9E3',
+    minHeight: '100vh',
+    padding: 28,
+    boxSizing: 'border-box'
+  },
+  pageHeader: { display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:18 },
+  pageTitle: { fontSize:24, fontWeight:700, margin:0 },
+  pageSubtitle: { color:'#6b7280', marginTop:6 },
+  backButton: { padding:'8px 12px', borderRadius:8, border:'none', background:'#fff', cursor:'pointer', boxShadow:'0 1px 4px rgba(0,0,0,0.06)' },
+  grid: { display:'grid', gridTemplateColumns:'1fr 480px', gap:20 },
+  card: { background:'#F7F6F3', padding:16, borderRadius:12, border:'1px solid #eee' },
+  sectionTitle: { fontSize:16, fontWeight:600, marginBottom:12 },
+  formRow: { display:'flex', flexDirection:'column', marginBottom:10 },
+  label: { fontSize:13, color:'#374151', marginBottom:6 },
+  select: { padding:'10px 12px', borderRadius:8, border:'1px solid #ddd' },
+  input: { padding:'10px 12px', borderRadius:8, border:'1px solid #ddd' },
+  primaryButton: { padding:'10px 14px', borderRadius:8, border:'none', background:'#355E3B', color:'#fff', cursor:'pointer' },
+  table: { width:'100%', borderCollapse:'collapse' },
+  th: { textAlign:'left', padding:8, borderBottom:'1px solid #eee', color:'#6b7280' },
+  td: { padding:8, borderBottom:'1px solid #f3f3f3' }
+};

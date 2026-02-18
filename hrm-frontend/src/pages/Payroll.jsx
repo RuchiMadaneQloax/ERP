@@ -5,6 +5,8 @@ import { getEmployees } from "../services/api";
 function Payroll({ token }) {
   const navigate = useNavigate();
 
+  const effectiveToken = token ?? localStorage.getItem("token");
+
   const [employees, setEmployees] = useState([]);
   const [selectedEmployee, setSelectedEmployee] = useState("");
   const [month, setMonth] = useState("");
@@ -18,14 +20,14 @@ function Payroll({ token }) {
   // =============================
   useEffect(() => {
     const loadEmployees = async () => {
-      const data = await getEmployees(token);
+      const data = await getEmployees(effectiveToken);
       if (Array.isArray(data.employees)) {
         setEmployees(data.employees);
       }
     };
 
-    loadEmployees();
-  }, [token]);
+    if (effectiveToken) loadEmployees();
+  }, [effectiveToken]);
 
   // =============================
   // FETCH PAYROLL HISTORY
@@ -37,7 +39,7 @@ function Payroll({ token }) {
       `http://localhost:5000/api/payroll?employee=${employeeId}`,
       {
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${effectiveToken}`,
         },
       }
     );
@@ -71,7 +73,7 @@ function Payroll({ token }) {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${effectiveToken}`,
         },
         body: JSON.stringify({
           employee: selectedEmployee,
@@ -94,88 +96,105 @@ function Payroll({ token }) {
   };
 
   return (
-    <div style={{ padding: "20px" }}>
-      <h2>Payroll Management</h2>
+    <div style={styles.container}>
 
-      <button onClick={() => navigate("/")}>
-        Back to Dashboard
-      </button>
-
-      <hr />
-
-      {/* Employee Selection */}
-      <select
-        value={selectedEmployee}
-        onChange={(e) => setSelectedEmployee(e.target.value)}
-      >
-        <option value="">Select Employee</option>
-        {employees.map((emp) => (
-          <option key={emp._id} value={emp._id}>
-            {emp.name}
-          </option>
-        ))}
-      </select>
-
-      <br /><br />
-
-      {/* Month Selector */}
-      <input
-        type="month"
-        value={month}
-        onChange={(e) => setMonth(e.target.value)}
-      />
-
-      <br /><br />
-
-      <button onClick={generatePayroll} disabled={loading}>
-        {loading ? "Generating..." : "Generate Payroll"}
-      </button>
-
-      <hr />
-
-      {/* Payroll Breakdown */}
-      {payrollResult && (
+      <div style={styles.pageHeader}>
         <div>
-          <h3>Payroll Breakdown</h3>
-          <p>Base Salary: ₹{payrollResult.baseSalary}</p>
-          <p>Present Days: {payrollResult.presentDays}</p>
-          <p>Absent Days: {payrollResult.absentDays}</p>
-          <p>Half Days: {payrollResult.halfDays}</p>
-          <h4>Final Salary: ₹{payrollResult.finalSalary}</h4>
+          <h2 style={styles.pageTitle}>Payroll</h2>
+          <p style={styles.pageSubtitle}>Generate and review payroll for employees</p>
         </div>
-      )}
+        <div>
+          <button style={styles.backButton} onClick={() => navigate('/')}>Back to Dashboard</button>
+        </div>
+      </div>
 
-      <hr />
+      <div style={styles.grid}>
+        <div style={styles.card}>
+          <h3 style={styles.sectionTitle}>Generate Payroll</h3>
 
-      {/* Payroll History */}
-      <h3>Payroll History</h3>
+          <div style={styles.formRow}>
+            <label style={styles.label}>Employee</label>
+            <select value={selectedEmployee} onChange={(e) => setSelectedEmployee(e.target.value)} style={styles.select}>
+              <option value="">Select Employee</option>
+              {employees.map((emp) => (
+                <option key={emp._id} value={emp._id}>{emp.name}</option>
+              ))}
+            </select>
+          </div>
 
-      {payrollHistory.length > 0 ? (
-        <table border="1" cellPadding="8">
-          <thead>
-            <tr>
-              <th>Month</th>
-              <th>Final Salary</th>
-              <th>Generated At</th>
-            </tr>
-          </thead>
-          <tbody>
-            {payrollHistory.map((record) => (
-              <tr key={record._id}>
-                <td>{record.month}</td>
-                <td>₹{record.finalSalary}</td>
-                <td>
-                  {new Date(record.createdAt).toLocaleDateString()}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      ) : (
-        <p>No payroll records found.</p>
-      )}
+          <div style={styles.formRow}>
+            <label style={styles.label}>Month</label>
+            <input type="month" value={month} onChange={(e) => setMonth(e.target.value)} style={styles.input} />
+          </div>
+
+          <div style={{marginTop:12}}>
+            <button onClick={generatePayroll} disabled={loading} style={styles.primaryButton}>{loading ? 'Generating...' : 'Generate Payroll'}</button>
+          </div>
+
+          {payrollResult && (
+            <div style={{marginTop:16}}>
+              <h4 style={{margin:0}}>Payroll Breakdown</h4>
+              <div style={{marginTop:8}}>
+                <div>Base Salary: ₹{payrollResult.baseSalary}</div>
+                <div>Present Days: {payrollResult.presentDays}</div>
+                <div>Absent Days: {payrollResult.absentDays}</div>
+                <div>Half Days: {payrollResult.halfDays}</div>
+                <div style={{marginTop:8,fontWeight:700}}>Final Salary: ₹{payrollResult.finalSalary}</div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div style={styles.card}>
+          <h3 style={styles.sectionTitle}>Payroll History</h3>
+
+          {payrollHistory.length > 0 ? (
+            <div style={{overflowX:'auto'}}>
+              <table style={styles.table}>
+                <thead>
+                  <tr>
+                    <th style={styles.th}>Month</th>
+                    <th style={styles.th}>Final Salary</th>
+                    <th style={styles.th}>Generated At</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {payrollHistory.map((record) => (
+                    <tr key={record._id}>
+                      <td style={styles.td}>{record.month}</td>
+                      <td style={styles.td}>₹{record.finalSalary}</td>
+                      <td style={styles.td}>{new Date(record.createdAt).toLocaleDateString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p style={{color:'#6b7280'}}>No payroll records found.</p>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
 
 export default Payroll;
+
+const styles = {
+  container: { backgroundColor: '#EDE9E3', minHeight: '100vh', padding: 28 },
+  pageHeader: { display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:18 },
+  pageTitle: { fontSize:24, fontWeight:700, margin:0 },
+  pageSubtitle: { color:'#6b7280', marginTop:6 },
+  backButton: { padding:'8px 12px', borderRadius:8, border:'none', background:'#fff', cursor:'pointer', boxShadow:'0 1px 4px rgba(0,0,0,0.06)' },
+  grid: { display:'grid', gridTemplateColumns:'1fr 480px', gap:20 },
+  card: { background:'#F7F6F3', padding:16, borderRadius:12, border:'1px solid #eee' },
+  sectionTitle: { fontSize:16, fontWeight:600, marginBottom:12 },
+  formRow: { display:'flex', flexDirection:'column', marginBottom:10 },
+  label: { fontSize:13, color:'#374151', marginBottom:6 },
+  select: { padding:'10px 12px', borderRadius:8, border:'1px solid #ddd' },
+  input: { padding:'10px 12px', borderRadius:8, border:'1px solid #ddd' },
+  primaryButton: { padding:'10px 14px', borderRadius:8, border:'none', background:'#355E3B', color:'#fff', cursor:'pointer' },
+  table: { width:'100%', borderCollapse:'collapse' },
+  th: { textAlign:'left', padding:8, borderBottom:'1px solid #eee', color:'#6b7280' },
+  td: { padding:8, borderBottom:'1px solid #f3f3f3' }
+};

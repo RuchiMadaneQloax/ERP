@@ -18,8 +18,9 @@ export const login = async (data) => {
 // =========================
 // EMPLOYEES
 // =========================
-export const getEmployees = async (token) => {
-  const response = await fetch(`${BASE_URL}/employees`, {
+export const getEmployees = async (token, search = "") => {
+  const url = `${BASE_URL}/employees${search ? `?search=${encodeURIComponent(search)}` : ""}`;
+  const response = await fetch(url, {
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -83,6 +84,33 @@ export const getDepartments = async (token) => {
 // =========================
 export const getDesignations = async (token) => {
   const response = await fetch("http://localhost:5000/api/designations", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  return response.json();
+};
+
+// =========================
+// ATTENDANCE
+// =========================
+export const getAttendance = async (token, month = "") => {
+  const url = `${BASE_URL}/attendance${month ? `?month=${encodeURIComponent(month)}` : ""}`;
+  const response = await fetch(url, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  return response.json();
+};
+
+// =========================
+// PAYROLL
+// =========================
+export const getPayrolls = async (token) => {
+  const response = await fetch(`${BASE_URL}/payroll`, {
     headers: {
       Authorization: `Bearer ${token}`,
     },

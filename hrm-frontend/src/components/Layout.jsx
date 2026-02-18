@@ -1,19 +1,15 @@
-import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
 import { Outlet } from "react-router-dom";
 
-export default function Layout() {
+export default function Layout({ setToken }) {
   return (
     <div className="flex h-screen bg-gray-50">
 
-      {/* Sidebar */}
-      <Sidebar />
-
-      {/* Main Section */}
+      {/* Main Section (full width) */}
       <div className="flex flex-col flex-1">
 
         {/* Topbar */}
-        <Topbar />
+        <Topbar setToken={setToken} />
 
         {/* Page Content */}
         <main className="p-6 overflow-y-auto">
