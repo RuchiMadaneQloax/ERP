@@ -10,6 +10,12 @@ function Payroll({ token }) {
   const [employees, setEmployees] = useState([]);
   const [selectedEmployee, setSelectedEmployee] = useState("");
   const [month, setMonth] = useState("");
+  const [overtimeHours, setOvertimeHours] = useState(0);
+  const [overtimeRate, setOvertimeRate] = useState("");
+  const [holidayPay, setHolidayPay] = useState(0);
+  const [adjustLabel, setAdjustLabel] = useState("");
+  const [adjustAmount, setAdjustAmount] = useState(0);
+  const [adjustments, setAdjustments] = useState([]);
 
   const [payrollResult, setPayrollResult] = useState(null);
   const [payrollHistory, setPayrollHistory] = useState([]);
@@ -78,6 +84,10 @@ function Payroll({ token }) {
         body: JSON.stringify({
           employee: selectedEmployee,
           month: month + "-01",
+          overtimeHours: Number(overtimeHours || 0),
+          overtimeRate: overtimeRate ? Number(overtimeRate) : null,
+          holidayPay: Number(holidayPay || 0),
+          adjustments,
         }),
       }
     );
@@ -127,6 +137,40 @@ function Payroll({ token }) {
             <input type="month" value={month} onChange={(e) => setMonth(e.target.value)} style={styles.input} />
           </div>
 
+          <div style={styles.formRow}>
+            <label style={styles.label}>Overtime hours</label>
+            <input type="number" min="0" value={overtimeHours} onChange={(e)=>setOvertimeHours(e.target.value)} style={styles.input} />
+          </div>
+
+          <div style={styles.formRow}>
+            <label style={styles.label}>Overtime rate (per hour) — optional</label>
+            <input type="number" min="0" value={overtimeRate} onChange={(e)=>setOvertimeRate(e.target.value)} style={styles.input} />
+            <div style={{fontSize:12,color:'#6b7280',marginTop:6}}>If left empty, 1.5x hourly rate is used (hourly = baseSalary / days / 8)</div>
+          </div>
+
+          <div style={styles.formRow}>
+            <label style={styles.label}>Holiday pay (amount)</label>
+            <input type="number" min="0" value={holidayPay} onChange={(e)=>setHolidayPay(e.target.value)} style={styles.input} />
+          </div>
+
+          <div style={{marginTop:8,marginBottom:6}}>
+            <strong style={{fontSize:13}}>Adjustments</strong>
+          </div>
+          <div style={{display:'flex',gap:8,marginBottom:8}}>
+            <input placeholder="label" value={adjustLabel} onChange={(e)=>setAdjustLabel(e.target.value)} style={{...styles.input,flex:1}} />
+            <input type="number" placeholder="amount" value={adjustAmount} onChange={(e)=>setAdjustAmount(e.target.value)} style={{...styles.input,width:120}} />
+            <button type="button" onClick={() => {
+              if (!adjustLabel) return alert('Add a label');
+              setAdjustments(prev=>[...prev,{label:adjustLabel,amount:Number(adjustAmount||0)}]);
+              setAdjustLabel(''); setAdjustAmount(0);
+            }} style={styles.primaryButton}>Add</button>
+          </div>
+          {adjustments.length>0 && (
+            <div style={{marginBottom:10}}>
+              {adjustments.map((a,i)=>(<div key={i} style={{display:'flex',justifyContent:'space-between',padding:6,background:'#fff',marginBottom:6,borderRadius:6}}><div>{a.label}</div><div>₹{a.amount}</div></div>))}
+            </div>
+          )}
+
           <div style={{marginTop:12}}>
             <button onClick={generatePayroll} disabled={loading} style={styles.primaryButton}>{loading ? 'Generating...' : 'Generate Payroll'}</button>
           </div>
@@ -136,6 +180,16 @@ function Payroll({ token }) {
               <h4 style={{margin:0}}>Payroll Breakdown</h4>
               <div style={{marginTop:8}}>
                 <div>Base Salary: ₹{payrollResult.baseSalary}</div>
+                <div>Overtime Hours: {payrollResult.overtimeHours} • Overtime Pay: ₹{payrollResult.overtimePay}</div>
+                <div>Holiday Pay: ₹{payrollResult.holidayPay}</div>
+                {payrollResult.adjustments && payrollResult.adjustments.length>0 && (
+                  <div>
+                    Adjustments:
+                    <ul>
+                      {payrollResult.adjustments.map((a, idx)=> <li key={idx}>{a.label}: ₹{a.amount}</li>)}
+                    </ul>
+                  </div>
+                )}
                 <div>Present Days: {payrollResult.presentDays}</div>
                 <div>Absent Days: {payrollResult.absentDays}</div>
                 <div>Half Days: {payrollResult.halfDays}</div>

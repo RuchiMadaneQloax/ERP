@@ -18,6 +18,19 @@ const payrollSchema = new mongoose.Schema(
       required: true,
     },
 
+    // Overtime / holiday / adjustments
+    overtimeHours: { type: Number, default: 0 },
+    overtimeRate: { type: Number, default: 0 }, // per hour
+    overtimePay: { type: Number, default: 0 },
+    holidayPay: { type: Number, default: 0 },
+    adjustments: [
+      {
+        label: String,
+        amount: Number,
+      },
+    ],
+    dynamicBaseSalary: { type: Number }, // optional override for base salary when dynamic adjustments applied
+
     presentDays: {
       type: Number,
       default: 0,

@@ -1,13 +1,14 @@
 const Payroll = require("../models/Payroll");
 const Employee = require("../models/Employee");
 const Attendance = require("../models/Attendance");
+const Audit = require('../models/Audit');
 
 // =======================================
 // GENERATE PAYROLL
 // =======================================
 exports.generatePayroll = async (req, res) => {
   try {
-    const { employee, month } = req.body;
+    const { employee, month, overtimeHours = 0, overtimeRate = null, holidayPay = 0, adjustments = [], baseSalary: overrideBaseSalary } = req.body;
 
     if (!employee || !month) {
       return res.status(400).json({
@@ -23,7 +24,7 @@ exports.generatePayroll = async (req, res) => {
       });
     }
 
-    const baseSalary = emp.designation.baseSalary;
+  const baseSalary = overrideBaseSalary || emp.designation.baseSalary;
 
     const start = new Date(month);
     const end = new Date(month);
@@ -55,25 +56,64 @@ exports.generatePayroll = async (req, res) => {
 
     const dailyRate = baseSalary / totalDays;
 
-    const finalSalary =
+    // compute overtime pay
+    const computedHourly = baseSalary / totalDays / 8; // assume 8 hours/day
+    const usedOvertimeRate = overtimeRate && Number(overtimeRate) > 0 ? Number(overtimeRate) : computedHourly * 1.5;
+    const overtimePay = Number(overtimeHours || 0) * usedOvertimeRate;
+
+    // adjustments array: [{label, amount}, ...]
+    const adjustmentsTotal = Array.isArray(adjustments)
+      ? adjustments.reduce((s, a) => s + (Number(a.amount) || 0), 0)
+      : 0;
+
+    const finalSalary = Math.round(
       baseSalary -
-      absent * dailyRate -
-      halfDay * (dailyRate / 2);
+        absent * dailyRate -
+        halfDay * (dailyRate / 2) +
+        (overtimePay || 0) +
+        (Number(holidayPay) || 0) +
+        adjustmentsTotal
+    );
 
     const payroll = await Payroll.create({
       employee,
       month,
       baseSalary,
+      dynamicBaseSalary: overrideBaseSalary || undefined,
       presentDays: present,
       absentDays: absent,
       halfDays: halfDay,
-      finalSalary: Math.round(finalSalary),
+      overtimeHours: Number(overtimeHours || 0),
+      overtimeRate: Number(usedOvertimeRate || 0),
+      overtimePay: Math.round(overtimePay || 0),
+      holidayPay: Number(holidayPay || 0),
+      adjustments: Array.isArray(adjustments) ? adjustments : [],
+      finalSalary: finalSalary,
       generatedBy: req.admin.id,
     });
 
     const populated = await Payroll.findById(payroll._id)
       .populate("employee", "name employeeId")
       .populate("generatedBy", "name email");
+
+    // audit log
+    try {
+      await Audit.create({
+        admin: req.admin.id,
+        action: 'generate_payroll',
+        details: {
+          payrollId: payroll._id,
+          employee: employee,
+          month,
+          overtimeHours: Number(overtimeHours || 0),
+          overtimePay: Math.round(overtimePay || 0),
+          holidayPay: Number(holidayPay || 0),
+          adjustments: Array.isArray(adjustments) ? adjustments : [],
+        },
+      });
+    } catch (err) {
+      console.warn('Failed to write audit for payroll generation:', err.message);
+    }
 
     res.status(201).json(populated);
   } catch (error) {

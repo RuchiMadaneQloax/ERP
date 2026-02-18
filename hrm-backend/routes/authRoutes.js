@@ -10,6 +10,12 @@ router.put(
   authenticate,
   controller.changePassword
 );
+// current logged-in admin profile
+router.get(
+  "/me",
+  authenticate,
+  controller.getProfile
+);
 router.get(
   "/admins",
   authenticate,

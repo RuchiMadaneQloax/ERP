@@ -36,4 +36,12 @@ router.delete(
   controller.deleteEmployee
 );
 
+// Adjust leave balance
+router.patch(
+  "/:id/leave-balance",
+  authenticate,
+  authorize("superadmin"),
+  controller.adjustLeaveBalance
+);
+
 module.exports = router;

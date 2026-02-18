@@ -6,7 +6,7 @@ const Employee = require("../models/Employee");
 // =======================================
 exports.markAttendance = async (req, res) => {
   try {
-    const { employee, date, status } = req.body;
+    const { employee, date, status, overtimeHours = 0, isHoliday = false } = req.body;
 
     // Validate employee exists & active
     const empExists = await Employee.findById(employee);
@@ -20,6 +20,8 @@ exports.markAttendance = async (req, res) => {
       employee,
       date,
       status,
+      overtimeHours: Number(overtimeHours || 0),
+      isHoliday: Boolean(isHoliday),
       markedBy: req.admin.id,
     });
 

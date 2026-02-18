@@ -34,11 +34,30 @@ exports.createEmployee = async (req, res) => {
       salary,
     });
 
+    // initialize leave balances from active leave types
+    try {
+      const leaveTypes = await require('../models/LeaveType').find({ isActive: true });
+      if (Array.isArray(leaveTypes) && leaveTypes.length > 0) {
+        employee.leaveBalances = leaveTypes.map((lt) => ({ leaveType: lt._id, allocated: lt.maxDaysPerYear || 0, used: 0 }));
+        await employee.save();
+      }
+    } catch (err) {
+      // don't block employee creation if leave types lookup fails
+      console.warn('Could not initialize leave balances:', err.message);
+    }
+
     const populatedEmployee = await Employee.findById(employee._id)
       .populate("department", "name")
       .populate("designation", "title baseSalary");
 
     res.status(201).json(populatedEmployee);
+    // audit: employee created
+    try {
+      const Audit = require('../models/Audit');
+      await Audit.create({ admin: req.admin?.id, action: 'create_employee', details: { employeeId: employee._id, name: employee.name } });
+    } catch (err) {
+      // ignore
+    }
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -130,6 +149,36 @@ exports.deleteEmployee = async (req, res) => {
     }
 
     res.json({ message: "Employee deactivated successfully", employee });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// =======================================
+// ADJUST LEAVE BALANCE (Superadmin)
+// body: { leaveTypeId, deltaAllocated, deltaUsed }
+// =======================================
+exports.adjustLeaveBalance = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { leaveTypeId, deltaAllocated = 0, deltaUsed = 0 } = req.body;
+
+    const employee = await Employee.findById(id);
+    if (!employee) return res.status(404).json({ message: 'Employee not found' });
+
+    let idx = employee.leaveBalances.findIndex(lb => lb.leaveType && lb.leaveType.toString() === leaveTypeId);
+    if (idx === -1) {
+      // create new entry
+      employee.leaveBalances.push({ leaveType: leaveTypeId, allocated: deltaAllocated, used: deltaUsed });
+    } else {
+      employee.leaveBalances[idx].allocated = (employee.leaveBalances[idx].allocated || 0) + Number(deltaAllocated);
+      employee.leaveBalances[idx].used = (employee.leaveBalances[idx].used || 0) + Number(deltaUsed);
+    }
+
+    await employee.save();
+
+    const populated = await Employee.findById(id).populate('department').populate('designation');
+    res.json(populated);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

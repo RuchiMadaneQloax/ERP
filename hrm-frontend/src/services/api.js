@@ -118,3 +118,90 @@ export const getPayrolls = async (token) => {
 
   return response.json();
 };
+
+export const generatePayroll = async (payload, token) => {
+  const response = await fetch(`${BASE_URL}/payroll`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  return response.json();
+};
+
+// =========================
+// LEAVE
+// =========================
+export const getLeaveTypes = async (token) => {
+  const response = await fetch(`${BASE_URL}/leaves/types`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  return response.json();
+};
+
+export const applyLeave = async (data, token) => {
+  const response = await fetch(`${BASE_URL}/leaves/apply`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+
+  return response.json();
+};
+
+export const getLeaveRequests = async (token) => {
+  const response = await fetch(`${BASE_URL}/leaves`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  return response.json();
+};
+
+export const updateLeaveStatus = async (id, status, token) => {
+  const response = await fetch(`${BASE_URL}/leaves/${id}/status`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ status }),
+  });
+
+  return response.json();
+};
+
+export const adjustLeaveBalance = async (employeeId, body, token) => {
+  const response = await fetch(`${BASE_URL}/employees/${employeeId}/leave-balance`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(body),
+  });
+
+  return response.json();
+};
+
+// Lightweight JWT decode to read role from token payload (no verification)
+export const decodeToken = (token) => {
+  if (!token) return null;
+  try {
+    const payload = token.split('.')[1];
+    const decoded = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
+    return decoded;
+  } catch (err) {
+    return null;
+  }
+};

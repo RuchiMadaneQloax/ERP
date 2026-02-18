@@ -12,6 +12,8 @@ function Attendance({ token }) {
   const [selectedEmployee, setSelectedEmployee] = useState("");
   const [date, setDate] = useState("");
   const [status, setStatus] = useState("present");
+  const [overtimeHours, setOvertimeHours] = useState(0);
+  const [isHoliday, setIsHoliday] = useState(false);
 
   const [attendanceRecords, setAttendanceRecords] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -91,6 +93,8 @@ function Attendance({ token }) {
             employee: selectedEmployee,
             date,
             status,
+            overtimeHours: Number(overtimeHours) || 0,
+            isHoliday: Boolean(isHoliday),
           }),
         }
       );
@@ -152,6 +156,15 @@ function Attendance({ token }) {
             </select>
           </div>
 
+          <div style={styles.formRow}>
+            <label style={styles.label}>Overtime hours (optional)</label>
+            <input type="number" min="0" value={overtimeHours} onChange={(e)=>setOvertimeHours(e.target.value)} style={styles.input} />
+          </div>
+
+          <div style={styles.formRow}>
+            <label style={styles.label}><input type="checkbox" checked={isHoliday} onChange={(e)=>setIsHoliday(e.target.checked)} />&nbsp;Is Holiday</label>
+          </div>
+
           <div style={{marginTop:12}}>
             <button onClick={markAttendance} disabled={loading} style={styles.primaryButton}>{loading ? 'Marking...' : 'Mark Attendance'}</button>
           </div>
@@ -167,6 +180,8 @@ function Attendance({ token }) {
                   <tr>
                     <th style={styles.th}>Date</th>
                     <th style={styles.th}>Status</th>
+                    <th style={styles.th}>Overtime</th>
+                    <th style={styles.th}>Holiday</th>
                     <th style={styles.th}>Marked By</th>
                   </tr>
                 </thead>
@@ -175,6 +190,8 @@ function Attendance({ token }) {
                     <tr key={record._id}>
                       <td style={styles.td}>{new Date(record.date).toLocaleDateString()}</td>
                       <td style={styles.td}>{record.status}</td>
+                      <td style={styles.td}>{record.overtimeHours ?? 0}</td>
+                      <td style={styles.td}>{record.isHoliday ? 'Yes' : 'No'}</td>
                       <td style={styles.td}>{record.markedBy?.name}</td>
                     </tr>
                   ))}

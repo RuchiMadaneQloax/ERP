@@ -19,6 +19,18 @@ const attendanceSchema = new mongoose.Schema(
       required: true,
     },
 
+    // optional overtime hours for the day
+    overtimeHours: {
+      type: Number,
+      default: 0,
+    },
+
+    // mark if this date is a company holiday
+    isHoliday: {
+      type: Boolean,
+      default: false,
+    },
+
     markedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Admin",

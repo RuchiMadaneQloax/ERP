@@ -29,6 +29,7 @@ app.use("/api/departments", require("./routes/departmentRoutes"));
 app.use("/api/designations", require("./routes/designationRoutes"));
 app.use("/api/attendance", require("./routes/attendanceRoutes"));
 app.use("/api/payroll", require("./routes/payrollRoutes"));
+app.use("/api/leaves", require("./routes/leaveRoutes"));
 
 // =======================
 // Database Connection

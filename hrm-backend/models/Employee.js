@@ -31,6 +31,14 @@ const employeeSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
+    // leave balances per leave type
+    leaveBalances: [
+      {
+        leaveType: { type: mongoose.Schema.Types.ObjectId, ref: "LeaveType" },
+        allocated: { type: Number, default: 0 },
+        used: { type: Number, default: 0 },
+      },
+    ],
     status: {
       type: String,
       enum: ["active", "inactive"],

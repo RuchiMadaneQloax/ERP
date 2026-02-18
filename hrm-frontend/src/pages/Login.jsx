@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
 
-export default function Login({ setToken }) {
+export default function Login() {
   const navigate = useNavigate();
+  const { setToken } = useAuth();
 
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
@@ -64,7 +66,7 @@ export default function Login({ setToken }) {
         return;
       }
 
-      localStorage.setItem("token", data.token);
+      // store token in central AuthContext
       setToken(data.token);
 
       navigate("/");

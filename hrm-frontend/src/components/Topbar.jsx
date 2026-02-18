@@ -1,13 +1,13 @@
 import { useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
-export default function Topbar({ setToken }) {
+export default function Topbar() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { logout, role, payload } = useAuth();
 
   const handleLogout = () => {
-    // Clear token from storage and app state, then navigate to login
-    localStorage.removeItem("token");
-    if (setToken) setToken(null);
+    logout();
     navigate("/login");
   };
 
@@ -15,6 +15,7 @@ export default function Topbar({ setToken }) {
     { to: "/", label: "Dashboard" },
     { to: "/attendance", label: "Attendance" },
     { to: "/payroll", label: "Payroll" },
+    { to: "/leave", label: "Leave" },
   ];
 
   return (
@@ -39,9 +40,12 @@ export default function Topbar({ setToken }) {
       </div>
 
       <div style={styles.rightGroup}>
-        <button style={styles.iconButton} title="Notifications">🔔</button>
-        <button style={styles.profileButton} title="Profile">JD</button>
-        <button style={styles.logoutButton} onClick={handleLogout}>Logout</button>
+        <div style={{display:'flex',alignItems:'center',gap:8}}>
+          {role && <div style={{fontSize:13,color:'#374151',padding:'6px 8px',background:'#f3f4f6',borderRadius:8}}>{role.toUpperCase()}</div>}
+          <button style={styles.iconButton} title="Notifications">🔔</button>
+          <button style={styles.profileButton} title="Profile">{payload?.name ? payload.name.split(' ').map(n=>n[0]).slice(0,2).join('').toUpperCase() : 'JD'}</button>
+          <button style={styles.logoutButton} onClick={handleLogout}>Logout</button>
+        </div>
       </div>
 
     </div>
