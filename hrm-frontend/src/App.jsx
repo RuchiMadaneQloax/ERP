@@ -1,32 +1,23 @@
-import { useState } from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
-import Login from "./pages/Login";
+import { Routes, Route } from "react-router-dom";
+import Layout from "./components/Layout";
+
 import Dashboard from "./pages/Dashboard";
 import Attendance from "./pages/Attendance";
 import Payroll from "./pages/Payroll";
+import Login from "./pages/Login";
 
 function App() {
-  const [token, setToken] = useState(localStorage.getItem("token"));
-
-  if (!token) {
-    return <Login setToken={setToken} />;
-  }
-
   return (
     <Routes>
-      <Route
-        path="/"
-        element={<Dashboard token={token} setToken={setToken} />}
-      />
-      <Route
-        path="/attendance"
-        element={<Attendance token={token} />}
-      />
-      <Route path="*" element={<Navigate to="/" />} />
-      <Route
-  path="/payroll"
-  element={<Payroll token={token} />}
-/>
+
+      <Route path="/login" element={<Login />} />
+
+      <Route path="/" element={<Layout />}>
+        <Route index element={<Dashboard />} />
+        <Route path="attendance" element={<Attendance />} />
+        <Route path="payroll" element={<Payroll />} />
+      </Route>
+
     </Routes>
   );
 }
