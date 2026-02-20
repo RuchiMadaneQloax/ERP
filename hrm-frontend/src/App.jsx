@@ -5,6 +5,11 @@ import Attendance from "./pages/Attendance";
 import Payroll from "./pages/Payroll";
 import Leave from "./pages/Leave";
 import Login from "./pages/Login";
+import EmployeeLogin from "./pages/EmployeeLogin";
+import EmployeePortal from "./pages/employee/EmployeePortal";
+import MyLeaves from "./pages/employee/MyLeaves";
+import MyPayrolls from "./pages/employee/MyPayrolls";
+import MyAttendance from "./pages/employee/MyAttendance";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 
 function AppRoutes() {
@@ -41,6 +46,34 @@ function AppRoutes() {
         <Route path="payroll" element={<Payroll />} />
         <Route path="leave" element={<Leave />} />
       </Route>
+
+        {/* EMPLOYEE SELF-SERVICE */}
+        <Route
+          path="/employee/login"
+          element={
+            token ? (
+              <Navigate to="/employee" />
+            ) : (
+              <EmployeeLogin />
+            )
+          }
+        />
+
+        <Route
+          path="/employee"
+          element={
+            token ? (
+              <EmployeePortal />
+            ) : (
+              <Navigate to="/employee/login" />
+            )
+          }
+        >
+          <Route index element={<MyLeaves />} />
+          <Route path="leaves" element={<MyLeaves />} />
+          <Route path="payslips" element={<MyPayrolls />} />
+          <Route path="attendance" element={<MyAttendance />} />
+        </Route>
 
     </Routes>
   );

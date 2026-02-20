@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getEmployees } from "../services/api";
+import formatDate from '../utils/formatDate';
 
 function Attendance({ token }) {
   const navigate = useNavigate();
@@ -188,7 +189,7 @@ function Attendance({ token }) {
                 <tbody>
                   {attendanceRecords.map((record) => (
                     <tr key={record._id}>
-                      <td style={styles.td}>{new Date(record.date).toLocaleDateString()}</td>
+                      <td style={styles.td}>{formatDate(record.date)}</td>
                       <td style={styles.td}>{record.status}</td>
                       <td style={styles.td}>{record.overtimeHours ?? 0}</td>
                       <td style={styles.td}>{record.isHoliday ? 'Yes' : 'No'}</td>

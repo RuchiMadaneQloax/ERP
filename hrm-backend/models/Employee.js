@@ -15,6 +15,11 @@ const employeeSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
+    // optional hashed password for employee self-service
+    password: {
+      type: String,
+      required: false,
+    },
    department: {
   type: mongoose.Schema.Types.ObjectId,
   ref: "Department",

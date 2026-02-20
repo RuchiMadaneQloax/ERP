@@ -205,3 +205,34 @@ export const decodeToken = (token) => {
     return null;
   }
 };
+
+// =========================
+// EMPLOYEE SELF-SERVICE API
+// =========================
+export const loginEmployee = async (data) => {
+  const response = await fetch(`${BASE_URL}/employee-auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+
+  return response.json();
+};
+
+export const getMyLeaves = async (token, month = '') => {
+  const url = `${BASE_URL.replace('/api', '/api/employee')}/leaves${month ? `?month=${encodeURIComponent(month)}` : ''}`;
+  const response = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+  return response.json();
+};
+
+export const getMyPayrolls = async (token, month = '') => {
+  const url = `${BASE_URL.replace('/api', '/api/employee')}/payrolls${month ? `?month=${encodeURIComponent(month)}` : ''}`;
+  const response = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+  return response.json();
+};
+
+export const getMyAttendance = async (token, month = '') => {
+  const url = `${BASE_URL.replace('/api', '/api/employee')}/attendance${month ? `?month=${encodeURIComponent(month)}` : ''}`;
+  const response = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+  return response.json();
+};

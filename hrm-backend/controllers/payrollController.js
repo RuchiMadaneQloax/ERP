@@ -148,3 +148,24 @@ exports.getPayroll = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+// =======================================
+// GET MY PAYROLLS (Employee)
+// =======================================
+exports.getMyPayrolls = async (req, res) => {
+  try {
+    const employeeId = req.employee.id;
+    const { month } = req.query;
+    const query = { employee: employeeId };
+
+    if (month) query.month = month;
+
+    const payroll = await Payroll.find(query)
+      .populate('employee', 'name employeeId')
+      .sort({ month: -1 });
+
+    res.json(payroll);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};

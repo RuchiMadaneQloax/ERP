@@ -11,6 +11,7 @@ import {
   getAttendance,
   getPayrolls,
 } from "../services/api";
+import formatCurrency from '../utils/formatCurrency';
 
 function Dashboard({ token, setToken }) {
   const navigate = useNavigate();
@@ -218,7 +219,7 @@ function Dashboard({ token, setToken }) {
 
             <div style={styles.modalRow}>
               <div><strong>Email:</strong> {selectedEmployee.email}</div>
-              <div><strong>Salary:</strong> ₹{selectedEmployee.salary}</div>
+              <div><strong>Salary:</strong> {formatCurrency(selectedEmployee.salary)}</div>
             </div>
 
             <div style={styles.modalRow}>
@@ -247,7 +248,7 @@ function Dashboard({ token, setToken }) {
               <div key={emp._id} style={styles.searchResultRow}>
                 <div>
                   <div style={{fontWeight:600}}>{emp.name} <span style={{color:'#6b7280',fontSize:12}}>({emp.employeeId})</span></div>
-                  <div style={{fontSize:13,color:'#6b7280'}}>{emp.email} • ₹{emp.salary}</div>
+                  <div style={{fontSize:13,color:'#6b7280'}}>{emp.email} • {formatCurrency(emp.salary)}</div>
                 </div>
                 <div style={{display:'flex',gap:8}}>
                   <button style={styles.viewButton} onClick={() => setSelectedEmployee(emp)}>View</button>
@@ -296,7 +297,7 @@ function Dashboard({ token, setToken }) {
             <div style={styles.statCard}>
               <div style={styles.statIcon}>💰</div>
               <div>
-                <div style={styles.statNumber}>${(thisMonthPayrollTotal/1000).toFixed(0)}K</div>
+                <div style={styles.statNumber}>{formatCurrency(thisMonthPayrollTotal)}</div>
                 <div style={styles.statLabel}>This Month Payroll</div>
               </div>
             </div>

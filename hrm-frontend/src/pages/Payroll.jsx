@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getEmployees } from "../services/api";
+import formatCurrency from '../utils/formatCurrency';
 
 function Payroll({ token }) {
   const navigate = useNavigate();
@@ -167,7 +168,7 @@ function Payroll({ token }) {
           </div>
           {adjustments.length>0 && (
             <div style={{marginBottom:10}}>
-              {adjustments.map((a,i)=>(<div key={i} style={{display:'flex',justifyContent:'space-between',padding:6,background:'#fff',marginBottom:6,borderRadius:6}}><div>{a.label}</div><div>₹{a.amount}</div></div>))}
+              {adjustments.map((a,i)=>(<div key={i} style={{display:'flex',justifyContent:'space-between',padding:6,background:'#fff',marginBottom:6,borderRadius:6}}><div>{a.label}</div><div>{formatCurrency(a.amount)}</div></div>))}
             </div>
           )}
 
@@ -179,21 +180,21 @@ function Payroll({ token }) {
             <div style={{marginTop:16}}>
               <h4 style={{margin:0}}>Payroll Breakdown</h4>
               <div style={{marginTop:8}}>
-                <div>Base Salary: ₹{payrollResult.baseSalary}</div>
-                <div>Overtime Hours: {payrollResult.overtimeHours} • Overtime Pay: ₹{payrollResult.overtimePay}</div>
-                <div>Holiday Pay: ₹{payrollResult.holidayPay}</div>
+                <div>Base Salary: {formatCurrency(payrollResult.baseSalary)}</div>
+                <div>Overtime Hours: {payrollResult.overtimeHours} • Overtime Pay: {formatCurrency(payrollResult.overtimePay)}</div>
+                <div>Holiday Pay: {formatCurrency(payrollResult.holidayPay)}</div>
                 {payrollResult.adjustments && payrollResult.adjustments.length>0 && (
                   <div>
                     Adjustments:
                     <ul>
-                      {payrollResult.adjustments.map((a, idx)=> <li key={idx}>{a.label}: ₹{a.amount}</li>)}
+                      {payrollResult.adjustments.map((a, idx)=> <li key={idx}>{a.label}: {formatCurrency(a.amount)}</li>)}
                     </ul>
                   </div>
                 )}
                 <div>Present Days: {payrollResult.presentDays}</div>
                 <div>Absent Days: {payrollResult.absentDays}</div>
                 <div>Half Days: {payrollResult.halfDays}</div>
-                <div style={{marginTop:8,fontWeight:700}}>Final Salary: ₹{payrollResult.finalSalary}</div>
+                <div style={{marginTop:8,fontWeight:700}}>Final Salary: {formatCurrency(payrollResult.finalSalary)}</div>
               </div>
             </div>
           )}
@@ -216,7 +217,7 @@ function Payroll({ token }) {
                   {payrollHistory.map((record) => (
                     <tr key={record._id}>
                       <td style={styles.td}>{record.month}</td>
-                      <td style={styles.td}>₹{record.finalSalary}</td>
+                      <td style={styles.td}>{formatCurrency(record.finalSalary)}</td>
                       <td style={styles.td}>{new Date(record.createdAt).toLocaleDateString()}</td>
                     </tr>
                   ))}

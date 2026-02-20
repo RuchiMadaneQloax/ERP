@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getEmployees, getLeaveTypes, applyLeave, getLeaveRequests, decodeToken } from "../services/api";
+import formatDate from '../utils/formatDate';
 
 function Leave({ token }) {
   const navigate = useNavigate();
@@ -240,7 +241,7 @@ function Leave({ token }) {
                     <tr key={req._id}>
                       <td style={styles.td}>{req.employee?.name}</td>
                       <td style={styles.td}>{req.leaveType?.name}</td>
-                      <td style={styles.td}>{new Date(req.startDate).toLocaleDateString()} - {new Date(req.endDate).toLocaleDateString()}</td>
+                      <td style={styles.td}>{formatDate(req.startDate)} - {formatDate(req.endDate)}</td>
                       <td style={styles.td}>{req.totalDays}</td>
                       <td style={styles.td}>{req.status}</td>
                       <td style={styles.td}>{getRemainingFor(req.employee, req.leaveType?._id)}</td>
@@ -255,7 +256,7 @@ function Leave({ token }) {
                           <span style={{color:'#6b7280'}}>—</span>
                         )}
                       </td>
-                      <td style={styles.td}>{new Date(req.createdAt).toLocaleDateString()}</td>
+                      <td style={styles.td}>{formatDate(req.createdAt)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -284,7 +285,7 @@ const styles = {
   pageTitle: { fontSize:24, fontWeight:700, margin:0 },
   pageSubtitle: { color:'#6b7280', marginTop:6 },
   backButton: { padding:'8px 12px', borderRadius:8, border:'none', background:'#fff', cursor:'pointer', boxShadow:'0 1px 4px rgba(0,0,0,0.06)' },
-  grid: { display:'grid', gridTemplateColumns:'1fr 480px', gap:20 },
+  grid: { display:'grid', gridTemplateColumns:'420px 1fr', gap:20 },
   card: { background:'#F7F6F3', padding:16, borderRadius:12, border:'1px solid #eee' },
   sectionTitle: { fontSize:16, fontWeight:600, marginBottom:12 },
   formRow: { display:'flex', flexDirection:'column', marginBottom:10 },

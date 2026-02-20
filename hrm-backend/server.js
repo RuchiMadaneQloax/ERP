@@ -30,6 +30,9 @@ app.use("/api/designations", require("./routes/designationRoutes"));
 app.use("/api/attendance", require("./routes/attendanceRoutes"));
 app.use("/api/payroll", require("./routes/payrollRoutes"));
 app.use("/api/leaves", require("./routes/leaveRoutes"));
+// Employee self-service (login + my endpoints)
+app.use('/api/employee-auth', require('./routes/employeeAuthRoutes'));
+app.use('/api/employee', require('./routes/employeeSelfRoutes'));
 
 // =======================
 // Database Connection

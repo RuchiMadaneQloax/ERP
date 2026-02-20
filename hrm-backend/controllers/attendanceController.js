@@ -115,3 +115,31 @@ exports.getMonthlySummary = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+// =======================================
+// GET MY ATTENDANCE (Employee)
+// =======================================
+exports.getMyAttendance = async (req, res) => {
+  try {
+    const employeeId = req.employee.id;
+    const { month } = req.query;
+
+    const query = { employee: employeeId };
+
+    if (month) {
+      const start = new Date(month);
+      const end = new Date(month);
+      end.setMonth(end.getMonth() + 1);
+      query.date = { $gte: start, $lt: end };
+    }
+
+    const attendance = await Attendance.find(query)
+      .populate('employee', 'name employeeId')
+      .populate('markedBy', 'name email')
+      .sort({ date: -1 });
+
+    res.json(attendance);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};

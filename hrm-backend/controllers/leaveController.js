@@ -195,3 +195,31 @@ exports.getLeaveRequests = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+// =======================================
+// GET MY LEAVES (Employee)
+// =======================================
+exports.getMyLeaves = async (req, res) => {
+  try {
+    const employeeId = req.employee.id;
+    const { month } = req.query;
+
+    const query = { employee: employeeId };
+
+    if (month) {
+      const start = new Date(month);
+      const end = new Date(month);
+      end.setMonth(end.getMonth() + 1);
+      // fetch leaves that start within the month (simple heuristic)
+      query.startDate = { $gte: start, $lt: end };
+    }
+
+    const leaves = await LeaveRequest.find(query)
+      .populate('leaveType', 'name')
+      .sort({ createdAt: -1 });
+
+    res.json(leaves);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
