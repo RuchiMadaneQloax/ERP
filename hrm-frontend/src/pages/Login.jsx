@@ -3,27 +3,41 @@ import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
+const EMPLOYEE_DEFAULT_PASSWORD = "ChangeMe123";
+
 export default function Login() {
   const navigate = useNavigate();
   const { setToken } = useAuth();
 
+  const [activeSlide, setActiveSlide] = useState("admin");
   const [showPassword, setShowPassword] = useState(false);
-  const [formData, setFormData] = useState({
+  const [adminForm, setAdminForm] = useState({
     email: "",
     password: "",
+  });
+  const [employeeForm, setEmployeeForm] = useState({
+    email: "",
+    password: EMPLOYEE_DEFAULT_PASSWORD,
   });
 
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
 
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
+  const handleAdminChange = (e) => {
+    setAdminForm({
+      ...adminForm,
       [e.target.name]: e.target.value,
     });
   };
 
-  const validate = () => {
+  const handleEmployeeChange = (e) => {
+    setEmployeeForm({
+      ...employeeForm,
+      [e.target.name]: e.target.value,
+    });
+  };
+
+  const validate = (formData) => {
     let newErrors = {};
 
     if (!formData.email) {
@@ -41,23 +55,25 @@ export default function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const formData = activeSlide === "admin" ? adminForm : employeeForm;
 
-    const validationErrors = validate();
+    const validationErrors = validate(formData);
     setErrors(validationErrors);
 
     if (Object.keys(validationErrors).length !== 0) return;
 
     try {
       setLoading(true);
+      const endpoint =
+        activeSlide === "admin"
+          ? `${import.meta.env.VITE_API_URL}/api/auth/login`
+          : `${import.meta.env.VITE_API_URL}/api/employee-auth/login`;
 
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/auth/login`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(formData),
-        }
-      );
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
 
       const data = await response.json();
 
@@ -69,9 +85,9 @@ export default function Login() {
       // store token in central AuthContext
       setToken(data.token);
 
-      navigate("/");
+      navigate(activeSlide === "admin" ? "/" : "/employee");
 
-    } catch (error) {
+    } catch {
       setErrors({ password: "Server error. Try again." });
     } finally {
       setLoading(false);
@@ -86,36 +102,129 @@ export default function Login() {
           <div style={styles.brandSubtitle}>Enterprise HR Management</div>
         </div>
 
-        <form onSubmit={handleSubmit} style={styles.form}>
-          <label style={styles.label}>Email</label>
-          <input
-            type="text"
-            name="email"
-            value={formData.email}
-            onChange={handleChange}
-            style={styles.input}
-            placeholder="you@example.com"
-          />
-          {errors.email && <div style={styles.error}>{errors.email}</div>}
+        <div style={styles.slideSwitcher}>
+          <button
+            type="button"
+            style={{
+              ...styles.slideButton,
+              ...(activeSlide === "admin" ? styles.slideButtonActive : {}),
+            }}
+            onClick={() => {
+              setActiveSlide("admin");
+              setErrors({});
+            }}
+          >
+            Admin Login
+          </button>
+          <button
+            type="button"
+            style={{
+              ...styles.slideButton,
+              ...(activeSlide === "employee" ? styles.slideButtonActive : {}),
+            }}
+            onClick={() => {
+              setActiveSlide("employee");
+              setErrors({});
+            }}
+          >
+            Employee Login
+          </button>
+        </div>
 
-          <label style={{...styles.label, marginTop:12}}>Password</label>
-          <div style={{position:'relative'}}>
-            <input
-              type={showPassword ? "text" : "password"}
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              style={styles.input}
-              placeholder="Enter your password"
-            />
-            <button type="button" onClick={() => setShowPassword(!showPassword)} style={styles.eyeButton}>
-              {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-            </button>
+        <form onSubmit={handleSubmit} style={styles.form}>
+          <div style={styles.slideViewport}>
+            <div
+              style={{
+                ...styles.slideTrack,
+                transform:
+                  activeSlide === "admin"
+                    ? "translateX(0%)"
+                    : "translateX(-50%)",
+              }}
+            >
+              <div style={styles.slide}>
+                <div style={styles.fieldGroup}>
+                  <label style={styles.label}>Email</label>
+                  <input
+                    type="text"
+                    name="email"
+                    value={adminForm.email}
+                    onChange={handleAdminChange}
+                    style={styles.input}
+                    placeholder="admin@company.com"
+                  />
+                </div>
+
+                <div style={styles.fieldGroup}>
+                  <label style={styles.label}>Password</label>
+                  <div style={styles.passwordWrap}>
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      name="password"
+                      value={adminForm.password}
+                      onChange={handleAdminChange}
+                      style={styles.input}
+                      placeholder="Enter your password"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      style={styles.eyeButton}
+                    >
+                      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div style={styles.slide}>
+                <div style={styles.fieldGroup}>
+                  <label style={styles.label}>Employee Email</label>
+                  <input
+                    type="text"
+                    name="email"
+                    value={employeeForm.email}
+                    onChange={handleEmployeeChange}
+                    style={styles.input}
+                    placeholder="employee@company.com"
+                  />
+                </div>
+
+                <div style={styles.fieldGroup}>
+                  <label style={styles.label}>Password</label>
+                  <div style={styles.passwordWrap}>
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      name="password"
+                      value={employeeForm.password}
+                      onChange={handleEmployeeChange}
+                      style={styles.input}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      style={styles.eyeButton}
+                    >
+                      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
+                </div>
+                <div style={styles.hint}>
+                  Default employee password is {EMPLOYEE_DEFAULT_PASSWORD}
+                </div>
+              </div>
+            </div>
           </div>
+
+          {errors.email && <div style={styles.error}>{errors.email}</div>}
           {errors.password && <div style={styles.error}>{errors.password}</div>}
 
           <button type="submit" disabled={loading} style={styles.submit}>
-            {loading ? "Logging in..." : "Login"}
+            {loading
+              ? "Logging in..."
+              : activeSlide === "admin"
+                ? "Login as Admin"
+                : "Login as Employee"}
           </button>
         </form>
       </div>
@@ -134,7 +243,7 @@ const styles = {
   },
   card: {
     width: '100%',
-    maxWidth: 420,
+    maxWidth: 500,
     background: '#F7F6F3',
     borderRadius: 14,
     padding: 28,
@@ -144,10 +253,44 @@ const styles = {
   header: { textAlign: 'center', marginBottom: 18 },
   brand: { fontSize: 22, fontWeight: 800, color: '#24492f' },
   brandSubtitle: { fontSize: 12, color: '#6b7280', marginTop: 6 },
+  slideSwitcher: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: 8,
+    marginBottom: 14,
+  },
+  slideButton: {
+    border: "1px solid #d1d5db",
+    borderRadius: 10,
+    background: "#fff",
+    padding: "8px 10px",
+    cursor: "pointer",
+    fontWeight: 600,
+    color: "#374151",
+  },
+  slideButtonActive: {
+    background: "#355E3B",
+    color: "#fff",
+    borderColor: "#355E3B",
+  },
   form: { display: 'flex', flexDirection: 'column', gap: 8, marginTop: 6 },
-  label: { fontSize: 13, color: '#374151', marginBottom: 6 },
-  input: { padding: '10px 12px', borderRadius: 10, border: '1px solid #ddd', outline: 'none' },
-  eyeButton: { position: 'absolute', right: 8, top: 8, border: 'none', background: 'transparent', cursor: 'pointer' },
+  slideViewport: { overflow: "hidden", width: "100%" },
+  slideTrack: {
+    width: "200%",
+    display: "flex",
+    transition: "transform 240ms ease",
+  },
+  slide: {
+    width: "50%",
+    boxSizing: "border-box",
+    padding: "0 6px",
+  },
+  fieldGroup: { marginBottom: 12 },
+  label: { display: "block", fontSize: 13, color: '#374151', marginBottom: 6 },
+  input: { width: "100%", boxSizing: "border-box", padding: '10px 12px', borderRadius: 10, border: '1px solid #ddd', outline: 'none' },
+  passwordWrap: { position: "relative" },
+  eyeButton: { position: 'absolute', right: 8, top: "50%", transform: "translateY(-50%)", border: 'none', background: 'transparent', cursor: 'pointer' },
   submit: { marginTop: 12, padding: '10px 14px', borderRadius: 10, border: 'none', background: '#355E3B', color: '#fff', fontWeight: 700, cursor: 'pointer' },
+  hint: { fontSize: 12, color: "#6b7280", marginTop: 6 },
   error: { color: '#dc2626', fontSize: 12, marginTop: 6 }
 };

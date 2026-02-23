@@ -1,26 +1,157 @@
 import React from 'react';
-import { Outlet, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import { Outlet, NavLink } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
 export default function EmployeePortal() {
-  const { payload } = useAuth();
+  const { payload, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
+
+  const initials = (payload?.name || payload?.id || 'E')
+    .toString()
+    .split(' ')
+    .map((p) => p[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
 
   return (
-    <div style={{padding:20}}>
-      <header style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
-        <h2>Employee Portal</h2>
-        <div>{payload?.name || payload?.id}</div>
+    <div style={styles.page}>
+      <header style={styles.header}>
+        <div>
+          <h2 style={styles.title}>Employee Dashboard</h2>
+          <p style={styles.subtitle}>Track your leaves, attendance and payslips</p>
+        </div>
+        <div style={styles.headerRight}>
+          <div style={styles.profileChip}>
+            <div style={styles.avatar}>{initials}</div>
+            <div>{payload?.name || payload?.id}</div>
+          </div>
+          <button
+            type="button"
+            onClick={handleLogout}
+            style={styles.logoutButton}
+          >
+            Logout
+          </button>
+        </div>
       </header>
 
-      <nav style={{marginBottom:12}}>
-        <Link to="/employee/leaves" style={{marginRight:12}}>My Leaves</Link>
-        <Link to="/employee/payslips" style={{marginRight:12}}>Payslips</Link>
-        <Link to="/employee/attendance">Attendance</Link>
+      <nav style={styles.navRow}>
+        <NavLink to="/employee/records" style={({ isActive }) => ({ ...styles.navButton, ...(isActive ? styles.navButtonActive : {}) })}>
+          All Records
+        </NavLink>
+        <NavLink to="/employee/leaves" style={({ isActive }) => ({ ...styles.navButton, ...(isActive ? styles.navButtonActive : {}) })}>
+          My Leaves
+        </NavLink>
+        <NavLink to="/employee/payslips" style={({ isActive }) => ({ ...styles.navButton, ...(isActive ? styles.navButtonActive : {}) })}>
+          Payslips
+        </NavLink>
+        <NavLink to="/employee/attendance" style={({ isActive }) => ({ ...styles.navButton, ...(isActive ? styles.navButtonActive : {}) })}>
+          Attendance
+        </NavLink>
       </nav>
 
-      <main>
+      <main style={styles.contentCard}>
         <Outlet />
       </main>
     </div>
   );
 }
+
+const styles = {
+  page: {
+    backgroundColor: '#efe9f6',
+    minHeight: '100vh',
+    padding: 28,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 20,
+  },
+  header: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  title: {
+    margin: 0,
+    fontSize: 26,
+    fontWeight: 700,
+    color: '#452c63',
+  },
+  subtitle: {
+    margin: '6px 0 0 0',
+    color: '#6e5a86',
+    fontSize: 14,
+  },
+  headerRight: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 12,
+  },
+  profileChip: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 10,
+    background: '#f7f2fc',
+    border: '1px solid #dccdf0',
+    borderRadius: 999,
+    padding: '8px 12px 8px 8px',
+    color: '#4c3569',
+    fontWeight: 600,
+  },
+  avatar: {
+    width: 30,
+    height: 30,
+    borderRadius: 999,
+    background: '#6f4a99',
+    color: '#fff',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: 12,
+    fontWeight: 700,
+  },
+  logoutButton: {
+    padding: '10px 14px',
+    borderRadius: 10,
+    border: '1px solid #d6c4ec',
+    background: '#fff',
+    color: '#5a3d7f',
+    cursor: 'pointer',
+    fontWeight: 700,
+  },
+  navRow: {
+    display: 'flex',
+    gap: 10,
+    flexWrap: 'wrap',
+  },
+  navButton: {
+    textDecoration: 'none',
+    padding: '9px 14px',
+    borderRadius: 10,
+    border: '1px solid #dbc9f1',
+    background: '#f9f5ff',
+    color: '#5d4480',
+    fontWeight: 600,
+  },
+  navButtonActive: {
+    background: '#6f4a99',
+    borderColor: '#6f4a99',
+    color: '#fff',
+  },
+  contentCard: {
+    background: '#faf7ff',
+    border: '1px solid #decff1',
+    borderRadius: 14,
+    boxShadow: '0 8px 24px rgba(81, 55, 112, 0.08)',
+    padding: 18,
+  },
+};

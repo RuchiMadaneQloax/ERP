@@ -8,7 +8,7 @@ const { authenticate, authorize } = require("../middleware/authMiddleware");
 router.post(
   "/types",
   authenticate,
-  authorize("superadmin"),
+  authorize("hr"),
   controller.createLeaveType
 );
 
@@ -18,19 +18,11 @@ router.get(
   controller.getLeaveTypes
 );
 
-// Apply Leave
-router.post(
-  "/apply",
-  authenticate,
-  authorize("hr"),
-  controller.applyLeave
-);
-
 // Approve / Reject
 router.put(
   "/:id/status",
   authenticate,
-  authorize("superadmin"),
+  authorize("hr"),
   controller.updateLeaveStatus
 );
 

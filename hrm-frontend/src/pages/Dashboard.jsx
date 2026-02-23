@@ -9,11 +9,14 @@ import {
   getDepartments,
   getDesignations,
   getAttendance,
+  getAttendanceByEmployee,
   getPayrolls,
+  getLeaveRequests,
 } from "../services/api";
 import formatCurrency from '../utils/formatCurrency';
+import AttendanceCalendar from "../components/AttendanceCalendar";
 
-function Dashboard({ token, setToken }) {
+function Dashboard({ token }) {
   const navigate = useNavigate();
 
   // Some parents (Layout via Routes) don't pass `token` prop — fall back to localStorage.
@@ -28,6 +31,9 @@ function Dashboard({ token, setToken }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
+  const [selectedEmployeeAttendance, setSelectedEmployeeAttendance] = useState([]);
+  const [selectedEmployeeLeaves, setSelectedEmployeeLeaves] = useState([]);
+  const [detailsLoading, setDetailsLoading] = useState(false);
   const [departments, setDepartments] = useState([]);
   const [designations, setDesignations] = useState([]);
   const [editingId, setEditingId] = useState(null);
@@ -132,11 +138,6 @@ function Dashboard({ token, setToken }) {
     setSelectedDesignation(emp.designation?._id || "");
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    setToken(null);
-  };
-
   const handleSearch = async () => {
     if (!searchTerm) return;
     try {
@@ -153,6 +154,36 @@ function Dashboard({ token, setToken }) {
   };
 
   const closeDetails = () => setSelectedEmployee(null);
+
+  useEffect(() => {
+    const loadSelectedEmployeeRecords = async () => {
+      if (!selectedEmployee?._id || !effectiveToken) return;
+      try {
+        setDetailsLoading(true);
+        const [attendanceData, leaveData] = await Promise.all([
+          getAttendanceByEmployee(effectiveToken, selectedEmployee._id),
+          getLeaveRequests(effectiveToken),
+        ]);
+
+        setSelectedEmployeeAttendance(Array.isArray(attendanceData) ? attendanceData : []);
+        const ownLeaves = Array.isArray(leaveData)
+          ? leaveData.filter((l) => {
+              const leaveEmp = l?.employee?._id || l?.employee;
+              return String(leaveEmp) === String(selectedEmployee._id);
+            })
+          : [];
+        setSelectedEmployeeLeaves(ownLeaves);
+      } catch (error) {
+        console.error("Error loading selected employee records:", error);
+        setSelectedEmployeeAttendance([]);
+        setSelectedEmployeeLeaves([]);
+      } finally {
+        setDetailsLoading(false);
+      }
+    };
+
+    loadSelectedEmployeeRecords();
+  }, [selectedEmployee?._id, effectiveToken]);
   // Dashboard metrics
   const totalEmployees = employees.length;
   const activeEmployees = employees.filter((e) => e.status === "active").length;
@@ -233,7 +264,15 @@ function Dashboard({ token, setToken }) {
             </div>
 
             <div style={{marginTop:12}}>
-              <pre style={{whiteSpace:'pre-wrap',background:'#f8faf8',padding:10,borderRadius:8}}>{JSON.stringify(selectedEmployee,null,2)}</pre>
+              {detailsLoading ? (
+                <div style={styles.detailsLoading}>Loading records...</div>
+              ) : (
+                <AttendanceCalendar
+                  title={`${selectedEmployee.name} - Attendance`}
+                  attendanceRecords={selectedEmployeeAttendance}
+                  leaveRequests={selectedEmployeeLeaves}
+                />
+              )}
             </div>
           </div>
         </div>
@@ -682,6 +721,7 @@ const styles = {
   modalOverlay: { position:'fixed', inset:0, background:'rgba(0,0,0,0.4)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:50 },
   modalCard: { background:'#fff', padding:20, borderRadius:12, width:'90%', maxWidth:700, boxShadow:'0 6px 24px rgba(0,0,0,0.15)' },
   modalRow: { display:'flex', justifyContent:'space-between', gap:10, marginBottom:8 },
+  detailsLoading: { padding: 10, borderRadius: 8, border: '1px solid #e5e7eb', color: '#6b7280', background: '#f9fafb' },
 
   recentItem: {
     background: '#fff',

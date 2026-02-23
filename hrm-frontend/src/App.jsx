@@ -5,15 +5,17 @@ import Attendance from "./pages/Attendance";
 import Payroll from "./pages/Payroll";
 import Leave from "./pages/Leave";
 import Login from "./pages/Login";
-import EmployeeLogin from "./pages/EmployeeLogin";
 import EmployeePortal from "./pages/employee/EmployeePortal";
+import MyRecords from "./pages/employee/MyRecords";
 import MyLeaves from "./pages/employee/MyLeaves";
 import MyPayrolls from "./pages/employee/MyPayrolls";
 import MyAttendance from "./pages/employee/MyAttendance";
 import { AuthProvider, useAuth } from "./context/AuthContext";
+import { decodeToken } from "./services/api";
 
 function AppRoutes() {
-  const { token } = useAuth();
+  const { token, role } = useAuth();
+  const effectiveRole = role || decodeToken(token)?.role || null;
 
   return (
     <Routes>
@@ -23,7 +25,7 @@ function AppRoutes() {
         path="/login"
         element={
           token ? (
-            <Navigate to="/" />
+            <Navigate to={effectiveRole === "employee" ? "/employee" : "/"} />
           ) : (
             <Login />
           )
@@ -34,8 +36,10 @@ function AppRoutes() {
       <Route
         path="/"
         element={
-          token ? (
+          token && effectiveRole !== "employee" ? (
             <Layout />
+          ) : token ? (
+            <Navigate to="/employee" />
           ) : (
             <Navigate to="/login" />
           )
@@ -52,9 +56,9 @@ function AppRoutes() {
           path="/employee/login"
           element={
             token ? (
-              <Navigate to="/employee" />
+              <Navigate to={effectiveRole === "employee" ? "/employee" : "/"} />
             ) : (
-              <EmployeeLogin />
+              <Navigate to="/login" />
             )
           }
         />
@@ -62,14 +66,17 @@ function AppRoutes() {
         <Route
           path="/employee"
           element={
-            token ? (
+            token && effectiveRole === "employee" ? (
               <EmployeePortal />
+            ) : token ? (
+              <Navigate to="/" />
             ) : (
-              <Navigate to="/employee/login" />
+              <Navigate to="/login" />
             )
           }
         >
-          <Route index element={<MyLeaves />} />
+          <Route index element={<MyRecords />} />
+          <Route path="records" element={<MyRecords />} />
           <Route path="leaves" element={<MyLeaves />} />
           <Route path="payslips" element={<MyPayrolls />} />
           <Route path="attendance" element={<MyAttendance />} />

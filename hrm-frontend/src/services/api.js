@@ -106,6 +106,16 @@ export const getAttendance = async (token, month = "") => {
   return response.json();
 };
 
+export const getAttendanceByEmployee = async (token, employeeId, month = "") => {
+  const q = new URLSearchParams();
+  if (employeeId) q.set("employee", employeeId);
+  if (month) q.set("month", month);
+  const response = await fetch(`${BASE_URL}/attendance?${q.toString()}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return response.json();
+};
+
 // =========================
 // PAYROLL
 // =========================
@@ -201,7 +211,7 @@ export const decodeToken = (token) => {
     const payload = token.split('.')[1];
     const decoded = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
     return decoded;
-  } catch (err) {
+  } catch {
     return null;
   }
 };
@@ -222,6 +232,19 @@ export const loginEmployee = async (data) => {
 export const getMyLeaves = async (token, month = '') => {
   const url = `${BASE_URL.replace('/api', '/api/employee')}/leaves${month ? `?month=${encodeURIComponent(month)}` : ''}`;
   const response = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+  return response.json();
+};
+
+export const applyMyLeave = async (data, token) => {
+  const url = `${BASE_URL.replace('/api', '/api/employee')}/leaves/apply`;
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
   return response.json();
 };
 

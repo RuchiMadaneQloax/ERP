@@ -2,6 +2,7 @@ const Payroll = require("../models/Payroll");
 const Employee = require("../models/Employee");
 const Attendance = require("../models/Attendance");
 const Audit = require('../models/Audit');
+const { resolveEmployeeScopeMatchValues } = require('../utils/resolveEmployeeScope');
 
 // =======================================
 // GENERATE PAYROLL
@@ -154,9 +155,12 @@ exports.getPayroll = async (req, res) => {
 // =======================================
 exports.getMyPayrolls = async (req, res) => {
   try {
-    const employeeId = req.employee.id;
+    const employeeMatchValues = await resolveEmployeeScopeMatchValues(req.employee);
+    if (!Array.isArray(employeeMatchValues) || employeeMatchValues.length === 0) {
+      return res.json([]);
+    }
     const { month } = req.query;
-    const query = { employee: employeeId };
+    const query = { employee: { $in: employeeMatchValues } };
 
     if (month) query.month = month;
 

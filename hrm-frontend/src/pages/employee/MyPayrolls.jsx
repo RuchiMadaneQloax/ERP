@@ -26,20 +26,27 @@ export default function MyPayrolls() {
   },[effectiveToken]);
 
   return (
-    <div>
-      <h3>My Payslips</h3>
+    <div style={styles.section}>
+      <h3 style={styles.title}>My Payslips</h3>
       {payrolls.length === 0 ? (
-        <p>No payroll records found.</p>
+        <div style={styles.empty}>No payroll records found.</div>
       ) : (
-        <table style={{width:'100%'}}>
-          <thead><tr><th>Month</th><th>Base</th><th>Overtime</th><th>Final Salary</th></tr></thead>
+        <table style={styles.table}>
+          <thead>
+            <tr>
+              <th style={styles.th}>Month</th>
+              <th style={styles.th}>Base</th>
+              <th style={styles.th}>Overtime</th>
+              <th style={styles.th}>Final Salary</th>
+            </tr>
+          </thead>
           <tbody>
             {payrolls.map(p=> (
-              <tr key={p._id}>
-                <td>{formatMonthToMMYYYY(p.month)}</td>
-                <td>{formatCurrency(p.baseSalary)}</td>
-                <td>{formatCurrency(p.overtimePay)}</td>
-                <td>{formatCurrency(p.finalSalary)}</td>
+              <tr key={p._id} style={styles.tr}>
+                <td style={styles.td}>{formatMonthToMMYYYY(p.month)}</td>
+                <td style={styles.td}>{formatCurrency(p.baseSalary)}</td>
+                <td style={styles.td}>{formatCurrency(p.overtimePay)}</td>
+                <td style={{ ...styles.td, fontWeight: 700, color: '#55327d' }}>{formatCurrency(p.finalSalary)}</td>
               </tr>
             ))}
           </tbody>
@@ -48,3 +55,22 @@ export default function MyPayrolls() {
     </div>
   );
 }
+
+const styles = {
+  section: { display: 'flex', flexDirection: 'column', gap: 10 },
+  title: { margin: 0, color: '#4b316c', fontSize: 20 },
+  empty: { padding: 12, background: '#f7f2fc', border: '1px solid #dfd0f2', borderRadius: 10, color: '#6a5880' },
+  table: { width: '100%', borderCollapse: 'separate', borderSpacing: 0, overflow: 'hidden' },
+  th: {
+    textAlign: 'left',
+    padding: '12px 10px',
+    fontSize: 12,
+    textTransform: 'uppercase',
+    letterSpacing: '0.04em',
+    color: '#6e5a86',
+    borderBottom: '1px solid #e5d9f4',
+    background: '#f4ecfc',
+  },
+  tr: { background: '#fff' },
+  td: { padding: '12px 10px', borderBottom: '1px solid #efe7fa', color: '#3f2d57' },
+};

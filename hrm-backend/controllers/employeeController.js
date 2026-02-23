@@ -1,6 +1,9 @@
 const Employee = require("../models/Employee");
 const Department = require("../models/Department");
 const Designation = require("../models/Designation");
+const bcrypt = require("bcryptjs");
+
+const DEFAULT_EMPLOYEE_PASSWORD = "ChangeMe123";
 
 // =======================================
 // CREATE EMPLOYEE
@@ -24,11 +27,13 @@ exports.createEmployee = async (req, res) => {
     // Auto-generate employeeId
     const count = await Employee.countDocuments();
     const employeeId = `EMP-${String(count + 1).padStart(4, "0")}`;
+    const hashedDefaultPassword = await bcrypt.hash(DEFAULT_EMPLOYEE_PASSWORD, 10);
 
     const employee = await Employee.create({
       employeeId,
       name,
       email,
+      password: hashedDefaultPassword,
       department,
       designation,
       salary,

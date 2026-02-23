@@ -1,41 +1,43 @@
 import React, { useEffect, useState } from 'react';
-import formatDate from '../../utils/formatDate';
-import { getMyAttendance } from '../../services/api';
+import { getMyAttendance, getMyLeaves } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
+import AttendanceCalendar from '../../components/AttendanceCalendar';
 
 export default function MyAttendance() {
   const { token } = useAuth();
   const effectiveToken = token ?? localStorage.getItem('token');
   const [rows, setRows] = useState([]);
+  const [leaves, setLeaves] = useState([]);
 
   useEffect(()=>{
     const load = async () => {
-      const data = await getMyAttendance(effectiveToken);
-      setRows(Array.isArray(data) ? data : []);
+      const [attendanceData, leaveData] = await Promise.all([
+        getMyAttendance(effectiveToken),
+        getMyLeaves(effectiveToken),
+      ]);
+      setRows(Array.isArray(attendanceData) ? attendanceData : []);
+      setLeaves(Array.isArray(leaveData) ? leaveData : []);
     };
     if (effectiveToken) load();
   },[effectiveToken]);
 
   return (
-    <div>
-      <h3>My Attendance</h3>
-      {rows.length === 0 ? (
-        <p>No attendance records.</p>
-      ) : (
-        <table style={{width:'100%'}}>
-          <thead><tr><th>Date</th><th>Status</th><th>Overtime</th><th>Holiday</th></tr></thead>
-          <tbody>
-            {rows.map(r=> (
-              <tr key={r._id}>
-                <td>{formatDate(r.date)}</td>
-                <td>{r.status}</td>
-                <td>{r.overtimeHours}</td>
-                <td>{r.isHoliday ? 'Yes' : 'No'}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+    <div style={styles.section}>
+      <h3 style={styles.title}>My Attendance</h3>
+      {rows.length === 0 && leaves.length === 0 ? (
+        <div style={styles.empty}>No attendance records.</div>
+      ) : null}
+      <AttendanceCalendar
+        title="Attendance Calendar"
+        attendanceRecords={rows}
+        leaveRequests={leaves}
+      />
     </div>
   );
 }
+
+const styles = {
+  section: { display: 'flex', flexDirection: 'column', gap: 10 },
+  title: { margin: 0, color: '#4b316c', fontSize: 20 },
+  empty: { padding: 12, background: '#f7f2fc', border: '1px solid #dfd0f2', borderRadius: 10, color: '#6a5880' },
+};

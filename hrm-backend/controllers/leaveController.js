@@ -1,6 +1,7 @@
 const LeaveType = require("../models/LeaveType");
 const LeaveRequest = require("../models/LeaveRequest");
 const Employee = require("../models/Employee");
+const { resolveEmployeeScopeIds, resolveEmployeeScopeMatchValues } = require('../utils/resolveEmployeeScope');
 
 // =======================================
 // CREATE LEAVE TYPE (Superadmin)
@@ -201,10 +202,13 @@ exports.getLeaveRequests = async (req, res) => {
 // =======================================
 exports.getMyLeaves = async (req, res) => {
   try {
-    const employeeId = req.employee.id;
+    const employeeMatchValues = await resolveEmployeeScopeMatchValues(req.employee);
+    if (!Array.isArray(employeeMatchValues) || employeeMatchValues.length === 0) {
+      return res.json([]);
+    }
     const { month } = req.query;
 
-    const query = { employee: employeeId };
+    const query = { employee: { $in: employeeMatchValues } };
 
     if (month) {
       const start = new Date(month);
@@ -219,6 +223,68 @@ exports.getMyLeaves = async (req, res) => {
       .sort({ createdAt: -1 });
 
     res.json(leaves);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// =======================================
+// APPLY MY LEAVE (Employee)
+// =======================================
+exports.applyMyLeave = async (req, res) => {
+  try {
+    const employeeIds = await resolveEmployeeScopeIds(req.employee);
+    const employeeMatchValues = await resolveEmployeeScopeMatchValues(req.employee);
+    if (!Array.isArray(employeeIds) || employeeIds.length === 0) {
+      return res.status(404).json({ message: 'Employee not found' });
+    }
+
+    const primaryEmployeeId = req.employee?.id || employeeIds[0];
+    const { leaveType, startDate, endDate, reason } = req.body;
+
+    if (!leaveType || !startDate || !endDate) {
+      return res.status(400).json({ message: 'Leave type, start date and end date are required' });
+    }
+
+    const emp = await Employee.findById(primaryEmployeeId);
+    if (!emp || emp.status !== 'active') {
+      return res.status(404).json({ message: 'Employee not found or inactive' });
+    }
+
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    if (start > end) {
+      return res.status(400).json({ message: 'Invalid date range' });
+    }
+
+    const totalDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+
+    const overlap = await LeaveRequest.findOne({
+      employee: { $in: employeeMatchValues },
+      status: { $in: ['pending', 'approved'] },
+      startDate: { $lte: end },
+      endDate: { $gte: start },
+    });
+
+    if (overlap) {
+      return res.status(400).json({ message: 'Overlapping leave request exists' });
+    }
+
+    const leave = await LeaveRequest.create({
+      employee: primaryEmployeeId,
+      leaveType,
+      startDate: start,
+      endDate: end,
+      totalDays,
+      reason,
+    });
+
+    const populated = await LeaveRequest.findById(leave._id)
+      .populate('employee', 'name employeeId email')
+      .populate('leaveType', 'name');
+
+    res.status(201).json(populated);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

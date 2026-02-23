@@ -1,5 +1,6 @@
 const Attendance = require("../models/Attendance");
 const Employee = require("../models/Employee");
+const { resolveEmployeeScopeMatchValues } = require('../utils/resolveEmployeeScope');
 
 // =======================================
 // MARK ATTENDANCE
@@ -121,10 +122,13 @@ exports.getMonthlySummary = async (req, res) => {
 // =======================================
 exports.getMyAttendance = async (req, res) => {
   try {
-    const employeeId = req.employee.id;
+    const employeeMatchValues = await resolveEmployeeScopeMatchValues(req.employee);
+    if (!Array.isArray(employeeMatchValues) || employeeMatchValues.length === 0) {
+      return res.json([]);
+    }
     const { month } = req.query;
 
-    const query = { employee: employeeId };
+    const query = { employee: { $in: employeeMatchValues } };
 
     if (month) {
       const start = new Date(month);
