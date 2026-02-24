@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { decodeToken, getLeaveRequests, updateLeaveStatus } from "../services/api";
+import { decodeToken, getAdminProfile, getLeaveRequests, updateLeaveStatus } from "../services/api";
 import formatDate from "../utils/formatDate";
 
 function Leave({ token }) {
@@ -8,7 +8,7 @@ function Leave({ token }) {
   const effectiveToken = token ?? localStorage.getItem("token");
 
   const [leaveRequests, setLeaveRequests] = useState([]);
-  const [userRole, setUserRole] = useState(null);
+  const [canApproveLeaves, setCanApproveLeaves] = useState(false);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -28,16 +28,34 @@ function Leave({ token }) {
 
   useEffect(() => {
     if (!effectiveToken) return;
-    try {
-      const payload = decodeToken(effectiveToken);
-      setUserRole(payload?.role || null);
-    } catch {
-      setUserRole(null);
-    }
+    const loadAccess = async () => {
+      try {
+        const payload = decodeToken(effectiveToken);
+        const role = payload?.role || null;
+
+        if (role === "hr") {
+          setCanApproveLeaves(true);
+          return;
+        }
+
+        if (role === "superadmin") {
+          const profile = await getAdminProfile(effectiveToken);
+          const email = String(profile?.email || "").toLowerCase();
+          setCanApproveLeaves(["client@company.com", "dev@qloax.com"].includes(email));
+          return;
+        }
+
+        setCanApproveLeaves(false);
+      } catch {
+        setCanApproveLeaves(false);
+      }
+    };
+
+    loadAccess();
   }, [effectiveToken]);
 
   const handleUpdateStatus = async (id, status) => {
-    if (userRole !== "hr") return;
+    if (!canApproveLeaves) return;
     if (!confirm(`Mark this request as ${status}?`)) return;
 
     try {
@@ -64,7 +82,7 @@ function Leave({ token }) {
         <div>
           <h2 style={styles.pageTitle}>Leave Management</h2>
           <p style={styles.pageSubtitle}>
-            Employees apply leave in Employee Portal. HR can approve/reject. Superadmin is read-only.
+            Employees apply leave in Employee Portal. HR and authorized superadmins can approve/reject.
           </p>
         </div>
         <div>
@@ -77,7 +95,7 @@ function Leave({ token }) {
       <div style={styles.grid}>
         <div style={styles.card}>
           <h3 style={styles.sectionTitle}>Access Policy</h3>
-          {userRole === "hr" ? (
+          {canApproveLeaves ? (
             <p style={styles.noteText}>
               You can review all leave requests and update status.
             </p>
@@ -116,7 +134,7 @@ function Leave({ token }) {
                       <td style={styles.td}>{req.totalDays}</td>
                       <td style={styles.td}>{req.status}</td>
                       <td style={styles.td}>
-                        {userRole === "hr" ? (
+                        {canApproveLeaves ? (
                           <div style={{ display: "flex", gap: 8 }}>
                             <button
                               disabled={loading}

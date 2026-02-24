@@ -22,7 +22,7 @@ router.get(
 router.put(
   "/:id/status",
   authenticate,
-  authorize("hr"),
+  authorize("hr", "superadmin"),
   controller.updateLeaveStatus
 );
 

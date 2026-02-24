@@ -5,6 +5,7 @@ export default function Topbar() {
   const location = useLocation();
   const navigate = useNavigate();
   const { logout, role, payload } = useAuth();
+  const effectiveRole = role || payload?.role || null;
 
   const handleLogout = () => {
     logout();
@@ -16,6 +17,7 @@ export default function Topbar() {
     { to: "/attendance", label: "Attendance" },
     { to: "/payroll", label: "Payroll" },
     { to: "/leave", label: "Leave" },
+    ...(effectiveRole === "superadmin" ? [{ to: "/org-setup", label: "Org Setup" }] : []),
   ];
 
   return (

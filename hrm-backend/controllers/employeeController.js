@@ -98,6 +98,25 @@ exports.getEmployees = async (req, res) => {
 };
 
 // =======================================
+// GET EMPLOYEE BY ID
+// =======================================
+exports.getEmployeeById = async (req, res) => {
+  try {
+    const employee = await Employee.findById(req.params.id)
+      .populate("department", "name")
+      .populate("designation", "title baseSalary");
+
+    if (!employee) {
+      return res.status(404).json({ message: "Employee not found" });
+    }
+
+    res.json(employee);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// =======================================
 // UPDATE EMPLOYEE
 // =======================================
 exports.updateEmployee = async (req, res) => {

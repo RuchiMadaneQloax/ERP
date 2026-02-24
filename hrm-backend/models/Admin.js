@@ -26,6 +26,11 @@ const adminSchema = new mongoose.Schema(
       default: "superadmin",
     },
 
+    permissions: {
+      type: [String],
+      default: [],
+    },
+
     isActive: {
       type: Boolean,
       default: true,

@@ -79,6 +79,19 @@ export const getDepartments = async (token) => {
   return response.json();
 };
 
+export const createDepartment = async (data, token) => {
+  const response = await fetch(`${BASE_URL}/departments`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+
+  return response.json();
+};
+
 // =========================
 // DESIGNATIONS
 // =========================
@@ -87,6 +100,19 @@ export const getDesignations = async (token) => {
     headers: {
       Authorization: `Bearer ${token}`,
     },
+  });
+
+  return response.json();
+};
+
+export const createDesignation = async (data, token) => {
+  const response = await fetch(`${BASE_URL}/designations`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
   });
 
   return response.json();
@@ -103,6 +129,77 @@ export const getAttendance = async (token, month = "") => {
     },
   });
 
+  return response.json();
+};
+
+export const getEmployeeById = async (id, token) => {
+  const response = await fetch(`${BASE_URL}/employees/${id}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  return response.json();
+};
+
+export const getAdminProfile = async (token) => {
+  const response = await fetch(`${BASE_URL}/auth/me`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return response.json();
+};
+
+export const getAdmins = async (token) => {
+  const response = await fetch(`${BASE_URL}/auth/admins`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return response.json();
+};
+
+export const getAdminById = async (id, token) => {
+  const response = await fetch(`${BASE_URL}/auth/admins/${id}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return response.json();
+};
+
+export const createAdmin = async (data, token) => {
+  const response = await fetch(`${BASE_URL}/auth/register`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+  return response.json();
+};
+
+export const updateAdminAccount = async (id, data, token) => {
+  const response = await fetch(`${BASE_URL}/auth/admins/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+  return response.json();
+};
+
+export const deleteAdminAccount = async (id, token) => {
+  const response = await fetch(`${BASE_URL}/auth/admins/${id}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
   return response.json();
 };
 
@@ -229,6 +326,18 @@ export const loginEmployee = async (data) => {
   return response.json();
 };
 
+export const changeEmployeePassword = async (data, token) => {
+  const response = await fetch(`${BASE_URL}/employee-auth/change-password`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+  return response.json();
+};
+
 export const getMyLeaves = async (token, month = '') => {
   const url = `${BASE_URL.replace('/api', '/api/employee')}/leaves${month ? `?month=${encodeURIComponent(month)}` : ''}`;
   const response = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
@@ -259,3 +368,4 @@ export const getMyAttendance = async (token, month = '') => {
   const response = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
   return response.json();
 };
+

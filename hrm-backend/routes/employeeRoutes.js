@@ -19,6 +19,12 @@ router.get(
   authorize("superadmin", "hr", "manager"),
   controller.getEmployees
 );
+router.get(
+  "/:id",
+  authenticate,
+  authorize("superadmin", "hr", "manager"),
+  controller.getEmployeeById
+);
 
 // Only superadmin and hr can update
 router.put(

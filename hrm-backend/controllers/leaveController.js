@@ -1,7 +1,10 @@
 const LeaveType = require("../models/LeaveType");
 const LeaveRequest = require("../models/LeaveRequest");
 const Employee = require("../models/Employee");
+const Admin = require("../models/Admin");
 const { resolveEmployeeScopeIds, resolveEmployeeScopeMatchValues } = require('../utils/resolveEmployeeScope');
+
+const SUPERADMIN_LEAVE_APPROVERS = new Set(["client@company.com", "dev@qloax.com"]);
 
 // =======================================
 // CREATE LEAVE TYPE (Superadmin)
@@ -103,6 +106,14 @@ exports.applyLeave = async (req, res) => {
 // =======================================
 exports.updateLeaveStatus = async (req, res) => {
   try {
+    if (req.admin?.role === "superadmin") {
+      const actingAdmin = await Admin.findById(req.admin.id).select("email");
+      const email = String(actingAdmin?.email || "").toLowerCase();
+      if (!SUPERADMIN_LEAVE_APPROVERS.has(email)) {
+        return res.status(403).json({ message: "Forbidden: superadmin cannot approve/reject leaves" });
+      }
+    }
+
     const { id } = req.params;
     const { status } = req.body;
 

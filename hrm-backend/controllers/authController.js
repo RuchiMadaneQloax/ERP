@@ -5,7 +5,7 @@ const jwt = require("jsonwebtoken");
 // Register Admin
 exports.register = async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
+    const { name, email, password, role, permissions = [] } = req.body;
 
     const existing = await Admin.findOne({ email });
     if (existing) {
@@ -19,6 +19,7 @@ exports.register = async (req, res) => {
       email,
       password: hashedPassword,
       role: role || "superadmin",
+      permissions: Array.isArray(permissions) ? permissions : [],
     });
 
     res.status(201).json({ message: "Admin registered successfully" });
@@ -98,6 +99,48 @@ exports.getAdmins = async (req, res) => {
     const admins = await Admin.find().select("-password");
 
     res.json(admins);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// =======================================
+// GET ADMIN BY ID (Superadmin Only)
+// =======================================
+exports.getAdminById = async (req, res) => {
+  try {
+    const admin = await Admin.findById(req.params.id).select("-password");
+    if (!admin) return res.status(404).json({ message: "Admin not found" });
+    res.json(admin);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// =======================================
+// UPDATE ADMIN (Superadmin Only)
+// =======================================
+exports.updateAdmin = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { role, isActive, permissions } = req.body;
+
+    const admin = await Admin.findById(id);
+    if (!admin) return res.status(404).json({ message: "Admin not found" });
+
+    // Prevent deactivating yourself
+    if (admin._id.toString() === req.admin.id && isActive === false) {
+      return res.status(400).json({ message: "You cannot deactivate your own account" });
+    }
+
+    if (role !== undefined) admin.role = role;
+    if (typeof isActive === "boolean") admin.isActive = isActive;
+    if (permissions !== undefined) admin.permissions = Array.isArray(permissions) ? permissions : [];
+
+    await admin.save();
+
+    const safeAdmin = await Admin.findById(id).select("-password");
+    res.json(safeAdmin);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

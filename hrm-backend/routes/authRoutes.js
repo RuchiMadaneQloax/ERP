@@ -3,7 +3,12 @@ const router = express.Router();
 const controller = require("../controllers/authController");
 const { authenticate, authorize } = require("../middleware/authMiddleware");
 
-router.post("/register", controller.register);
+router.post(
+  "/register",
+  authenticate,
+  authorize("superadmin"),
+  controller.register
+);
 router.post("/login", controller.login);
 router.put(
   "/change-password",
@@ -21,6 +26,18 @@ router.get(
   authenticate,
   authorize("superadmin"),
   controller.getAdmins
+);
+router.get(
+  "/admins/:id",
+  authenticate,
+  authorize("superadmin"),
+  controller.getAdminById
+);
+router.put(
+  "/admins/:id",
+  authenticate,
+  authorize("superadmin"),
+  controller.updateAdmin
 );
 router.delete(
   "/admins/:id",
