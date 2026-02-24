@@ -14,6 +14,7 @@ import MyLeaves from "./pages/employee/MyLeaves";
 import MyPayrolls from "./pages/employee/MyPayrolls";
 import MyAttendance from "./pages/employee/MyAttendance";
 import ChangePassword from "./pages/employee/ChangePassword";
+import EmployeeProfile from "./pages/employee/EmployeeProfile";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { decodeToken } from "./services/api";
 import FaceAttendance from "./pages/FaceAttendance";
@@ -86,6 +87,7 @@ function AppRoutes() {
         >
           <Route index element={<MyRecords />} />
           <Route path="records" element={<MyRecords />} />
+          <Route path="profile" element={<EmployeeProfile />} />
           <Route path="leaves" element={<MyLeaves />} />
           <Route path="payslips" element={<MyPayrolls />} />
           <Route path="attendance" element={<MyAttendance />} />

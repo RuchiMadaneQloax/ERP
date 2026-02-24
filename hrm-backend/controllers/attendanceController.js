@@ -1,20 +1,41 @@
 const Attendance = require("../models/Attendance");
 const Employee = require("../models/Employee");
-const { resolveEmployeeScopeMatchValues } = require('../utils/resolveEmployeeScope');
-const axios = require("axios"); // ✅ NEW
+const axios = require("axios");
+const { resolveEmployeeScopeMatchValues } = require("../utils/resolveEmployeeScope");
 
-// =======================================
-// MARK ATTENDANCE (MANUAL - UNCHANGED)
-// =======================================
+function getISTDateStart(now = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Kolkata",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(now);
+
+  const year = parts.find((p) => p.type === "year")?.value;
+  const month = parts.find((p) => p.type === "month")?.value;
+  const day = parts.find((p) => p.type === "day")?.value;
+  return new Date(`${year}-${month}-${day}T00:00:00+05:30`);
+}
+
+function getISTMonthRange(monthInput) {
+  const raw = String(monthInput || "");
+  const [yearPart, monthPart] = raw.split("-").map((v) => Number(v));
+  if (!yearPart || !monthPart || monthPart < 1 || monthPart > 12) return null;
+
+  const start = new Date(`${String(yearPart)}-${String(monthPart).padStart(2, "0")}-01T00:00:00+05:30`);
+  const nextYear = monthPart === 12 ? yearPart + 1 : yearPart;
+  const nextMonth = monthPart === 12 ? 1 : monthPart + 1;
+  const end = new Date(`${String(nextYear)}-${String(nextMonth).padStart(2, "0")}-01T00:00:00+05:30`);
+  return { start, end };
+}
+
 exports.markAttendance = async (req, res) => {
   try {
     const { employee, date, status, overtimeHours = 0, isHoliday = false } = req.body;
 
     const empExists = await Employee.findById(employee);
     if (!empExists || empExists.status !== "active") {
-      return res.status(400).json({
-        message: "Invalid or inactive employee",
-      });
+      return res.status(400).json({ message: "Invalid or inactive employee" });
     }
 
     const attendance = await Attendance.create({
@@ -34,71 +55,42 @@ exports.markAttendance = async (req, res) => {
   } catch (error) {
     if (error.code === 11000) {
       return res.status(400).json({
-        message:
-          "Attendance already marked for this employee on this date",
+        message: "Attendance already marked for this employee on this date",
       });
     }
-
     res.status(500).json({ message: error.message });
   }
 };
 
-// =======================================
-// MARK ATTENDANCE BY FACE (NEW)
-// =======================================
 exports.markAttendanceByFace = async (req, res) => {
   try {
-    const { image } = req.body; // base64 image
+    const { image } = req.body;
+    if (!image) return res.status(400).json({ message: "Image is required" });
 
-    if (!image) {
-      return res.status(400).json({ message: "Image is required" });
-    }
-
-    // 🔥 Call Python Face Recognition Service
-    const response = await axios.post("http://localhost:8000/recognize", {
-      image,
-    });
-
+    const response = await axios.post("http://localhost:8000/recognize", { image });
     const { employeeId, confidence } = response.data;
 
     if (!employeeId) {
-      return res.status(404).json({
-        message: "Face not recognized",
-      });
+      return res.status(404).json({ message: "Face not recognized" });
     }
 
     const empExists = await Employee.findById(employeeId);
     if (!empExists || empExists.status !== "active") {
-      return res.status(400).json({
-        message: "Invalid or inactive employee",
-      });
+      return res.status(400).json({ message: "Invalid or inactive employee" });
     }
 
-    const now = new Date();
-
-// Convert to IST (UTC +5:30)
-    const istOffset = 5.5 * 60 * 60 * 1000;
-    const istDate = new Date(now.getTime() + istOffset);
-
-// Set time to midnight
-    istDate.setHours(0, 0, 0, 0);
-
-const today = istDate;
-
-    today.setHours(0, 0, 0, 0);
+    const today = getISTDateStart();
 
     const attendance = await Attendance.create({
-  employee: employeeId,
-  date: today,
-  status: "present",
-  overtimeHours: 0,
-  isHoliday: false,
-  markedBy: "698ee1729468ca080b94f126",
-  method: "face",
-  checkInTime: new Date(),
-});
-
-
+      employee: employeeId,
+      date: today,
+      status: "present",
+      overtimeHours: 0,
+      isHoliday: false,
+      markedBy: "698ee1729468ca080b94f126",
+      method: "face",
+      checkInTime: new Date(),
+    });
 
     const populated = await Attendance.findById(attendance._id)
       .populate("employee", "name employeeId")
@@ -109,39 +101,24 @@ const today = istDate;
       confidence,
       attendance: populated,
     });
-
   } catch (error) {
     if (error.code === 11000) {
-      return res.status(400).json({
-        message: "Attendance already marked for today",
-      });
+      return res.status(400).json({ message: "Attendance already marked for today" });
     }
-
-    res.status(500).json({
-      message: error.message || "Face attendance failed",
-    });
+    res.status(500).json({ message: error.message || "Face attendance failed" });
   }
 };
 
-// =======================================
-// GET ATTENDANCE (UNCHANGED)
-// =======================================
 exports.getAttendance = async (req, res) => {
   try {
     const { employee, month } = req.query;
-
     const query = {};
 
-    if (employee) {
-      query.employee = employee;
-    }
+    if (employee) query.employee = employee;
 
     if (month) {
-      const start = new Date(month);
-      const end = new Date(month);
-      end.setMonth(end.getMonth() + 1);
-
-      query.date = { $gte: start, $lt: end };
+      const range = getISTMonthRange(month);
+      if (range) query.date = { $gte: range.start, $lt: range.end };
     }
 
     const attendance = await Attendance.find(query)
@@ -154,52 +131,34 @@ exports.getAttendance = async (req, res) => {
   }
 };
 
-// =======================================
-// MONTHLY SUMMARY (UNCHANGED)
-// =======================================
 exports.getMonthlySummary = async (req, res) => {
   try {
     const { employee, month } = req.query;
-
     if (!employee || !month) {
-      return res.status(400).json({
-        message: "Employee and month are required",
-      });
+      return res.status(400).json({ message: "Employee and month are required" });
     }
 
-    const start = new Date(month);
-    const end = new Date(month);
-    end.setMonth(end.getMonth() + 1);
+    const range = getISTMonthRange(month);
+    if (!range) return res.status(400).json({ message: "Invalid month format" });
 
     const records = await Attendance.find({
       employee,
-      date: { $gte: start, $lt: end },
+      date: { $gte: range.start, $lt: range.end },
     });
 
-    const summary = {
-      present: 0,
-      absent: 0,
-      halfDay: 0,
-    };
-
+    const summary = { present: 0, absent: 0, halfDay: 0 };
     records.forEach((r) => {
       if (r.status === "present") summary.present++;
       if (r.status === "absent") summary.absent++;
       if (r.status === "half-day") summary.halfDay++;
     });
 
-    res.json({
-      totalDays: records.length,
-      ...summary,
-    });
+    res.json({ totalDays: records.length, ...summary });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-// =======================================
-// GET MY ATTENDANCE (UNCHANGED)
-// =======================================
 exports.getMyAttendance = async (req, res) => {
   try {
     const employeeMatchValues = await resolveEmployeeScopeMatchValues(req.employee);
@@ -208,19 +167,16 @@ exports.getMyAttendance = async (req, res) => {
     }
 
     const { month } = req.query;
-
     const query = { employee: { $in: employeeMatchValues } };
 
     if (month) {
-      const start = new Date(month);
-      const end = new Date(month);
-      end.setMonth(end.getMonth() + 1);
-      query.date = { $gte: start, $lt: end };
+      const range = getISTMonthRange(month);
+      if (range) query.date = { $gte: range.start, $lt: range.end };
     }
 
     const attendance = await Attendance.find(query)
-      .populate('employee', 'name employeeId')
-      .populate('markedBy', 'name email')
+      .populate("employee", "name employeeId")
+      .populate("markedBy", "name email")
       .sort({ date: -1 });
 
     res.json(attendance);

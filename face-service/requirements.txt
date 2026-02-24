@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+deepface
+pymongo
+numpy
+python-multipart
+dnspython
+python-dotenv
+tensorflow

@@ -1,16 +1,8 @@
 import React, { useEffect, useState } from 'react';
-
-function formatMonthToMMYYYY(input) {
-  if (!input) return '';
-  const d = (input instanceof Date) ? input : new Date(input);
-  if (Number.isNaN(d.getTime())) return '';
-  const mm = String(d.getMonth() + 1).padStart(2, '0');
-  const yyyy = d.getFullYear();
-  return `${mm}-${yyyy}`;
-}
 import { getMyPayrolls } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import formatCurrency from '../../utils/formatCurrency';
+import formatDate from '../../utils/formatDate';
 
 export default function MyPayrolls() {
   const { token } = useAuth();
@@ -43,7 +35,7 @@ export default function MyPayrolls() {
           <tbody>
             {payrolls.map(p=> (
               <tr key={p._id} style={styles.tr}>
-                <td style={styles.td}>{formatMonthToMMYYYY(p.month)}</td>
+                <td style={styles.td}>{formatDate(p.month)}</td>
                 <td style={styles.td}>{formatCurrency(p.baseSalary)}</td>
                 <td style={styles.td}>{formatCurrency(p.overtimePay)}</td>
                 <td style={{ ...styles.td, fontWeight: 700, color: '#55327d' }}>{formatCurrency(p.finalSalary)}</td>

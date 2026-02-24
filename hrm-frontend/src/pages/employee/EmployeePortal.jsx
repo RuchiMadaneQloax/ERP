@@ -30,7 +30,14 @@ export default function EmployeePortal() {
         <div style={styles.headerRight}>
           <div style={styles.profileChip}>
             <div style={styles.avatar}>{initials}</div>
-            <div>{payload?.name || payload?.id}</div>
+            <button
+              type="button"
+              title="Profile"
+              onClick={() => navigate("/employee/profile")}
+              style={styles.profileNameButton}
+            >
+              {payload?.name || payload?.id}
+            </button>
           </div>
           <button
             type="button"
@@ -109,6 +116,15 @@ const styles = {
     padding: '8px 12px 8px 8px',
     color: '#4c3569',
     fontWeight: 600,
+  },
+  profileNameButton: {
+    border: "none",
+    background: "transparent",
+    color: "#4c3569",
+    fontWeight: 700,
+    cursor: "pointer",
+    padding: 0,
+    fontSize: 14,
   },
   avatar: {
     width: 30,

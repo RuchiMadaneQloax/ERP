@@ -2,12 +2,18 @@ import { useMemo, useState } from "react";
 
 function toDateKey(value) {
   if (!value) return "";
-  if (typeof value === "string" && value.length >= 10) return value.slice(0, 10);
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return "";
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Kolkata",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(d);
+  const y = parts.find((p) => p.type === "year")?.value;
+  const m = parts.find((p) => p.type === "month")?.value;
+  const day = parts.find((p) => p.type === "day")?.value;
+  if (!y || !m || !day) return "";
   return `${y}-${m}-${day}`;
 }
 
@@ -219,4 +225,3 @@ const styles = {
   legendItem: { display: "flex", alignItems: "center", gap: 6 },
   legendDot: { width: 10, height: 10, borderRadius: 999, border: "1px solid" },
 };
-

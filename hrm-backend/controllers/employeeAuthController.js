@@ -1,6 +1,7 @@
 const Employee = require('../models/Employee');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const axios = require('axios');
 
 const DEFAULT_EMPLOYEE_PASSWORD = 'ChangeMe123';
 
@@ -71,10 +72,43 @@ exports.me = async (req, res) => {
     const id = req.employee?.id;
     if (!id) return res.status(401).json({ message: 'Unauthorized' });
 
-    const emp = await Employee.findById(id).select('-password');
+    const emp = await Employee.findById(id)
+      .select('-password')
+      .populate('department', 'name code')
+      .populate('designation', 'title level');
     if (!emp) return res.status(404).json({ message: 'Employee not found' });
-    res.json(emp);
+    const out = emp.toObject();
+    out.faceEnrolled = Array.isArray(emp.faceEmbedding) && emp.faceEmbedding.length > 0;
+    delete out.faceEmbedding;
+    res.json(out);
   } catch (err) {
     res.status(500).json({ message: err.message });
+  }
+};
+
+exports.enrollFace = async (req, res) => {
+  try {
+    const id = req.employee?.id;
+    const { image } = req.body || {};
+
+    if (!id) return res.status(401).json({ message: 'Unauthorized' });
+    if (!image) return res.status(400).json({ message: 'Image is required' });
+
+    const emp = await Employee.findById(id).select('_id status');
+    if (!emp || emp.status !== 'active') {
+      return res.status(404).json({ message: 'Employee not found or inactive' });
+    }
+
+    const faceServiceBase = process.env.FACE_SERVICE_URL || 'http://localhost:8000';
+    const response = await axios.post(`${faceServiceBase}/enroll/${id}`, { image });
+
+    return res.json({
+      message: response?.data?.message || 'Face enrolled successfully',
+      employeeId: id,
+    });
+  } catch (err) {
+    const status = err?.response?.status || 500;
+    const message = err?.response?.data?.detail || err?.response?.data?.message || err.message;
+    return res.status(status).json({ message });
   }
 };

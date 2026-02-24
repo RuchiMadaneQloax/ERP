@@ -338,6 +338,45 @@ export const changeEmployeePassword = async (data, token) => {
   return response.json();
 };
 
+export const getMyEmployeeProfile = async (token) => {
+  const response = await fetch(`${BASE_URL}/employee-auth/me`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return response.json();
+};
+
+export const enrollMyFace = async (image, token) => {
+  const response = await fetch(`${BASE_URL}/employee-auth/face-enroll`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ image }),
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data?.message || "Face registration failed");
+  }
+  return data;
+};
+
+export const markAttendanceByFace = async (image, token) => {
+  const response = await fetch(`${BASE_URL}/attendance/face`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify({ image }),
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data?.message || "Attendance marking failed");
+  }
+  return data;
+};
+
 export const getMyLeaves = async (token, month = '') => {
   const url = `${BASE_URL.replace('/api', '/api/employee')}/leaves${month ? `?month=${encodeURIComponent(month)}` : ''}`;
   const response = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });

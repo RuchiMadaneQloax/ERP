@@ -27,16 +27,21 @@ app.add_middleware(
 # =========================
 # MONGODB CONNECTION
 # =========================
+import os
+from pymongo import MongoClient
+from dotenv import load_dotenv
+load_dotenv()
 
-MONGO_URI = "mongodb+srv://admin:admin123@cluster0.hssj8nc.mongodb.net/erp?retryWrites=true&w=majority"
-DB_NAME = "hrm"
+MONGO_URI = os.environ.get("MONGO_URI")
+DB_NAME = os.environ.get("DB_NAME", "hrm")
+
+if not MONGO_URI:
+    raise ValueError("MONGO_URI environment variable not set")
 
 client = MongoClient(MONGO_URI)
 db = client[DB_NAME]
 employees_collection = db["employees"]
 
-
-# =========================
 # REQUEST MODEL
 # =========================
 class FaceRequest(BaseModel):

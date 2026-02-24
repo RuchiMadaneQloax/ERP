@@ -4,15 +4,6 @@ import { useAuth } from '../../context/AuthContext';
 import formatDate from '../../utils/formatDate';
 import formatCurrency from '../../utils/formatCurrency';
 
-function formatMonthToMMYYYY(input) {
-  if (!input) return '';
-  const d = input instanceof Date ? input : new Date(input);
-  if (Number.isNaN(d.getTime())) return '';
-  const mm = String(d.getMonth() + 1).padStart(2, '0');
-  const yyyy = d.getFullYear();
-  return `${mm}-${yyyy}`;
-}
-
 export default function MyRecords() {
   const { token } = useAuth();
   const effectiveToken = token ?? localStorage.getItem('token');
@@ -86,7 +77,7 @@ export default function MyRecords() {
               <div style={styles.list}>
                 {payrolls.slice(0, 8).map((p) => (
                   <div key={p._id} style={styles.row}>
-                    <div style={styles.rowMain}>{formatMonthToMMYYYY(p.month)}</div>
+                    <div style={styles.rowMain}>{formatDate(p.month)}</div>
                     <div style={styles.rowMeta}>Final: {formatCurrency(p.finalSalary)}</div>
                   </div>
                 ))}
@@ -95,7 +86,7 @@ export default function MyRecords() {
           </section>
 
           <section style={styles.card}>
-            <h4 style={styles.cardTitle}>Attendance ({attendance.length})</h4>
+            <h4 style={styles.cardTitle}>Attendance Records ({attendance.length})</h4>
             {attendance.length === 0 ? (
               <div style={styles.empty}>No attendance records found.</div>
             ) : (
