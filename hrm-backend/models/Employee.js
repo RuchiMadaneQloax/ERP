@@ -20,18 +20,16 @@ const employeeSchema = new mongoose.Schema(
       type: String,
       required: false,
     },
-   department: {
-  type: mongoose.Schema.Types.ObjectId,
-  ref: "Department",
-  required: true,
-},
-
-  designation: {
-  type: mongoose.Schema.Types.ObjectId,
-  ref: "Designation",
-  required: true,
-},
-
+    department: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Department",
+      required: true,
+    },
+    designation: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Designation",
+      required: true,
+    },
     salary: {
       type: Number,
       required: true,
@@ -52,6 +50,12 @@ const employeeSchema = new mongoose.Schema(
     joiningDate: {
       type: Date,
       default: Date.now,
+    },
+
+    // ✅ NEW FIELD ADDED FOR FACIAL RECOGNITION
+    faceEmbedding: {
+      type: [Number], // stores 128D face embedding vector
+      default: null,
     },
   },
   { timestamps: true }

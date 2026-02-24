@@ -19,13 +19,11 @@ const attendanceSchema = new mongoose.Schema(
       required: true,
     },
 
-    // optional overtime hours for the day
     overtimeHours: {
       type: Number,
       default: 0,
     },
 
-    // mark if this date is a company holiday
     isHoliday: {
       type: Boolean,
       default: false,
@@ -36,11 +34,25 @@ const attendanceSchema = new mongoose.Schema(
       ref: "Admin",
       required: true,
     },
+
+    // ✅ NEW OPTIONAL FIELDS FOR FACE SYSTEM
+    checkInTime: {
+      type: Date,
+    },
+
+    checkOutTime: {
+      type: Date,
+    },
+
+    method: {
+      type: String,
+      enum: ["manual", "face"],
+      default: "manual",
+    },
   },
   { timestamps: true }
 );
 
-// Prevent duplicate attendance per employee per day
 attendanceSchema.index(
   { employee: 1, date: 1 },
   { unique: true }

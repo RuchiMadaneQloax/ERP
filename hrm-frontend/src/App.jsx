@@ -16,6 +16,7 @@ import MyAttendance from "./pages/employee/MyAttendance";
 import ChangePassword from "./pages/employee/ChangePassword";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { decodeToken } from "./services/api";
+import FaceAttendance from "./pages/FaceAttendance";
 
 function AppRoutes() {
   const { token, role } = useAuth();
@@ -56,6 +57,7 @@ function AppRoutes() {
         <Route path="org-setup" element={effectiveRole === "superadmin" ? <OrgSetup /> : <Navigate to="/" replace />} />
         <Route path="employees/:id" element={<EmployeeDetails />} />
         <Route path="admins/:id" element={<AdminDetails />} />
+        <Route path="/face-attendance" element={<FaceAttendance />} />
       </Route>
 
         {/* EMPLOYEE SELF-SERVICE */}

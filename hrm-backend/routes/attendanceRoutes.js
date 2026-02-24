@@ -4,7 +4,9 @@ const router = express.Router();
 const controller = require("../controllers/attendanceController");
 const { authenticate, authorize } = require("../middleware/authMiddleware");
 
-// HR and superadmin can mark attendance
+// =======================================
+// MANUAL ATTENDANCE (UNCHANGED)
+// =======================================
 router.post(
   "/",
   authenticate,
@@ -12,7 +14,19 @@ router.post(
   controller.markAttendance
 );
 
-// All roles can view attendance
+// =======================================
+// FACE ATTENDANCE (NEW)
+// =======================================
+// This route is for browser kiosk face recognition
+// You can optionally protect it with a secret key middleware later
+router.post(
+  "/face",
+  controller.markAttendanceByFace
+);
+
+// =======================================
+// GET ATTENDANCE (UNCHANGED)
+// =======================================
 router.get(
   "/",
   authenticate,
@@ -20,7 +34,9 @@ router.get(
   controller.getAttendance
 );
 
-// Monthly summary
+// =======================================
+// MONTHLY SUMMARY (UNCHANGED)
+// =======================================
 router.get(
   "/summary",
   authenticate,
