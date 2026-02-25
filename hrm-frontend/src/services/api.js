@@ -1,4 +1,5 @@
-const BASE_URL = "http://localhost:5000/api";
+const API_ROOT = (import.meta.env.VITE_API_URL || "http://localhost:5000").replace(/\/+$/, "");
+const BASE_URL = API_ROOT.endsWith("/api") ? API_ROOT : `${API_ROOT}/api`;
 
 // =========================
 // AUTH
@@ -70,7 +71,7 @@ export const deleteEmployee = async (id, token) => {
 // DEPARTMENTS
 // =========================
 export const getDepartments = async (token) => {
-  const response = await fetch("http://localhost:5000/api/departments", {
+  const response = await fetch(`${BASE_URL}/departments`, {
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -96,7 +97,7 @@ export const createDepartment = async (data, token) => {
 // DESIGNATIONS
 // =========================
 export const getDesignations = async (token) => {
-  const response = await fetch("http://localhost:5000/api/designations", {
+  const response = await fetch(`${BASE_URL}/designations`, {
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -407,4 +408,3 @@ export const getMyAttendance = async (token, month = '') => {
   const response = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
   return response.json();
 };
-
