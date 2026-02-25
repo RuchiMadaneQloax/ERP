@@ -78,8 +78,11 @@ exports.me = async (req, res) => {
       .populate('designation', 'title level');
     if (!emp) return res.status(404).json({ message: 'Employee not found' });
     const out = emp.toObject();
-    out.faceEnrolled = Array.isArray(emp.faceEmbedding) && emp.faceEmbedding.length > 0;
+    const hasSingleEmbedding = Array.isArray(emp.faceEmbedding) && emp.faceEmbedding.length > 0;
+    const hasMultiEmbeddings = Array.isArray(emp.faceEmbeddings) && emp.faceEmbeddings.length > 0;
+    out.faceEnrolled = hasSingleEmbedding || hasMultiEmbeddings;
     delete out.faceEmbedding;
+    delete out.faceEmbeddings;
     res.json(out);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -89,10 +92,17 @@ exports.me = async (req, res) => {
 exports.enrollFace = async (req, res) => {
   try {
     const id = req.employee?.id;
-    const { image } = req.body || {};
+    const { image, images } = req.body || {};
 
     if (!id) return res.status(401).json({ message: 'Unauthorized' });
-    if (!image) return res.status(400).json({ message: 'Image is required' });
+    const normalizedImages = Array.isArray(images)
+      ? images.filter((img) => typeof img === 'string' && img.trim().length > 0)
+      : image
+      ? [image]
+      : [];
+    if (normalizedImages.length < 3) {
+      return res.status(400).json({ message: 'At least 3 face images are required' });
+    }
 
     const emp = await Employee.findById(id).select('_id status');
     if (!emp || emp.status !== 'active') {
@@ -100,10 +110,11 @@ exports.enrollFace = async (req, res) => {
     }
 
     const faceServiceBase = process.env.FACE_SERVICE_URL || 'http://localhost:8000';
-    const response = await axios.post(`${faceServiceBase}/enroll/${id}`, { image });
+    const response = await axios.post(`${faceServiceBase}/enroll/${id}`, { images: normalizedImages });
 
     return res.json({
       message: response?.data?.message || 'Face enrolled successfully',
+      embeddingsCount: response?.data?.embeddingsCount || normalizedImages.length,
       employeeId: id,
     });
   } catch (err) {

@@ -57,6 +57,10 @@ const employeeSchema = new mongoose.Schema(
       type: [Number], // stores 128D face embedding vector
       default: null,
     },
+    faceEmbeddings: {
+      type: [[Number]], // stores multiple embeddings for better recognition accuracy
+      default: [],
+    },
   },
   { timestamps: true }
 );
