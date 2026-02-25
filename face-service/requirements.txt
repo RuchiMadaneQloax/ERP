@@ -2,8 +2,9 @@ fastapi
 uvicorn
 deepface
 pymongo
-numpy
+numpy<2
 python-multipart
 dnspython
 python-dotenv
-tensorflow
+tensorflow==2.16.1
+tf-keras==2.16.0
