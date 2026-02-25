@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from deepface import DeepFace
 import numpy as np
 import base64
@@ -8,32 +8,25 @@ import io
 from PIL import Image
 from pymongo import MongoClient
 from bson import ObjectId
+from dotenv import load_dotenv
+from typing import List, Optional
 import os
 
-# =========================
-# FASTAPI INIT
-# =========================
 app = FastAPI()
 
-# Enable CORS (so React/Node can call this API)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # You can restrict this later
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# =========================
-# MONGODB CONNECTION
-# =========================
-import os
-from pymongo import MongoClient
-from dotenv import load_dotenv
 load_dotenv()
 
 MONGO_URI = os.environ.get("MONGO_URI")
 DB_NAME = os.environ.get("DB_NAME", "hrm")
+MATCH_THRESHOLD = float(os.environ.get("FACE_MATCH_THRESHOLD", "0.5"))
 
 if not MONGO_URI:
     raise ValueError("MONGO_URI environment variable not set")
@@ -42,58 +35,77 @@ client = MongoClient(MONGO_URI)
 db = client[DB_NAME]
 employees_collection = db["employees"]
 
-# REQUEST MODEL
-# =========================
+
 class FaceRequest(BaseModel):
-    image: str  # base64 image
+    image: str
 
 
-# =========================
-# COSINE SIMILARITY
-# =========================
-def cosine_similarity(a, b):
-    return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
+class EnrollRequest(BaseModel):
+    images: Optional[List[str]] = Field(default=None)
+    image: Optional[str] = Field(default=None)
 
 
-# =========================
-# EXTRACT FACE EMBEDDING
-# =========================
-def extract_embedding(image_base64):
+def cosine_similarity(a: np.ndarray, b: np.ndarray) -> float:
+    denom = np.linalg.norm(a) * np.linalg.norm(b)
+    if denom == 0:
+        return -1.0
+    return float(np.dot(a, b) / denom)
+
+
+def extract_embedding(image_base64: str):
     try:
         image_data = base64.b64decode(image_base64.split(",")[-1])
         image = Image.open(io.BytesIO(image_data)).convert("RGB")
 
         embedding = DeepFace.represent(
             img_path=np.array(image),
-            model_name="ArcFace",   # 🔥 Strong model
-            enforce_detection=False
+            model_name="ArcFace",
+            enforce_detection=False,
         )
 
         if not embedding:
             return None
 
-        return np.array(embedding[0]["embedding"])
-
-    except Exception as e:
-        print("Embedding Error:", e)
+        return np.array(embedding[0]["embedding"], dtype=np.float32)
+    except Exception as exc:
+        print("Embedding error:", exc)
         return None
 
 
-# =========================
-# ENROLL FACE
-# =========================
+def collect_enroll_images(payload: EnrollRequest) -> List[str]:
+    images = payload.images if isinstance(payload.images, list) else []
+    images = [img for img in images if isinstance(img, str) and img.strip()]
+    if not images and isinstance(payload.image, str) and payload.image.strip():
+        images = [payload.image]
+    return images
+
+
 @app.post("/enroll/{employee_id}")
-def enroll_face(employee_id: str, data: FaceRequest):
+def enroll_face(employee_id: str, data: EnrollRequest):
+    images = collect_enroll_images(data)
+    if not images:
+        raise HTTPException(status_code=400, detail="At least one face image is required")
 
-    embedding = extract_embedding(data.image)
+    embeddings = []
+    for img in images:
+        emb = extract_embedding(img)
+        if emb is not None:
+            embeddings.append(emb)
 
-    if embedding is None:
-        raise HTTPException(status_code=400, detail="No face detected")
+    if not embeddings:
+        raise HTTPException(status_code=400, detail="No valid face detected in provided images")
+
+    primary_embedding = np.mean(np.stack(embeddings), axis=0)
 
     try:
         result = employees_collection.update_one(
             {"_id": ObjectId(employee_id)},
-            {"$set": {"faceEmbedding": embedding.tolist()}}
+            {
+                "$set": {
+                    "faceEmbedding": primary_embedding.tolist(),
+                    "faceEmbeddings": [emb.tolist() for emb in embeddings],
+                }
+            },
         )
 
         if result.matched_count == 0:
@@ -101,60 +113,55 @@ def enroll_face(employee_id: str, data: FaceRequest):
 
         return {
             "message": "Face enrolled successfully",
-            "employeeId": employee_id
+            "employeeId": employee_id,
+            "embeddingsCount": len(embeddings),
         }
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
 
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
 
-
-# =========================
-# RECOGNIZE FACE
-# =========================
 @app.post("/recognize")
 def recognize_face(data: FaceRequest):
-
     new_embedding = extract_embedding(data.image)
-
     if new_embedding is None:
-        return {"employeeId": None, "confidence": 0}
+        return {"employeeId": None, "confidence": 0.0}
 
     best_match_id = None
-    best_score = -1
+    best_score = -1.0
 
-    employees = employees_collection.find({"faceEmbedding": {"$ne": None}})
+    employees = employees_collection.find(
+        {
+            "$or": [
+                {"faceEmbeddings.0": {"$exists": True}},
+                {"faceEmbedding": {"$ne": None}},
+            ]
+        }
+    )
 
     for emp in employees:
-        stored_embedding = np.array(emp["faceEmbedding"])
-        similarity = cosine_similarity(new_embedding, stored_embedding)
+        candidate_embeddings = []
 
-        print("Comparing with employee:", emp["_id"])
-        print("Similarity score:", similarity)
+        if isinstance(emp.get("faceEmbeddings"), list) and emp["faceEmbeddings"]:
+            candidate_embeddings.extend(emp["faceEmbeddings"])
 
-        if similarity > best_score:
-            best_score = similarity
-            best_match_id = str(emp["_id"])
+        if isinstance(emp.get("faceEmbedding"), list) and emp["faceEmbedding"]:
+            candidate_embeddings.append(emp["faceEmbedding"])
 
-    # Threshold (adjust if needed)
-    print("Best similarity found:", best_score)
+        for stored in candidate_embeddings:
+            stored_embedding = np.array(stored, dtype=np.float32)
+            similarity = cosine_similarity(new_embedding, stored_embedding)
+            if similarity > best_score:
+                best_score = similarity
+                best_match_id = str(emp["_id"])
 
-    THRESHOLD = 0.5
+    if best_score > MATCH_THRESHOLD and best_match_id:
+        return {"employeeId": best_match_id, "confidence": float(round(best_score, 3))}
 
-    if best_score > THRESHOLD:
-        return {
-            "employeeId": best_match_id,
-            "confidence": float(round(best_score, 3))
-        }
-
-    return {
-        "employeeId": None,
-        "confidence": float(round(best_score, 3))
-    }
+    return {"employeeId": None, "confidence": float(round(max(best_score, 0.0), 3))}
 
 
-# =========================
-# HEALTH CHECK
-# =========================
 @app.get("/")
 def health_check():
     return {"status": "Face Recognition Service Running"}
