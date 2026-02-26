@@ -8,15 +8,35 @@ import {
   updateAdminAccount,
 } from "../services/api";
 
-const PERMISSION_OPTIONS = [
-  { key: "leave:view", label: "View Leaves" },
-  { key: "leave:approve", label: "Approve/Reject Leaves" },
-  { key: "attendance:view", label: "View Attendance" },
-  { key: "attendance:mark", label: "Mark Attendance" },
-  { key: "payroll:view", label: "View Payroll" },
-  { key: "payroll:generate", label: "Generate Payroll" },
-  { key: "employee:view", label: "View Employees" },
-  { key: "employee:edit", label: "Edit Employees" },
+const PERMISSION_GROUPS = [
+  {
+    heading: "Leaves",
+    options: [
+      { key: "leave:view", label: "View" },
+      { key: "leave:approve", label: "Accept/ Reject" },
+    ],
+  },
+  {
+    heading: "Attendance",
+    options: [
+      { key: "attendance:view", label: "View" },
+      { key: "attendance:mark", label: "Mark" },
+    ],
+  },
+  {
+    heading: "Payroll",
+    options: [
+      { key: "payroll:view", label: "View" },
+      { key: "payroll:generate", label: "Generate" },
+    ],
+  },
+  {
+    heading: "Employees",
+    options: [
+      { key: "employee:view", label: "View" },
+      { key: "employee:edit", label: "Edit" },
+    ],
+  },
 ];
 
 export default function AdminDetails({ token }) {
@@ -136,20 +156,27 @@ export default function AdminDetails({ token }) {
 
         <div style={styles.card}>
           <h3 style={styles.cardTitle}>Permissions</h3>
-          <div style={styles.permissionsGrid}>
-            {PERMISSION_OPTIONS.map((opt) => (
-              <label key={opt.key} style={styles.permissionItem}>
-                <input
-                  type="checkbox"
-                  checked={permissions.includes(opt.key)}
-                  onChange={(e) => {
-                    setPermissions((prev) =>
-                      e.target.checked ? Array.from(new Set([...prev, opt.key])) : prev.filter((p) => p !== opt.key)
-                    );
-                  }}
-                />
-                <span>{opt.label}</span>
-              </label>
+          <div style={styles.permissionGroups}>
+            {PERMISSION_GROUPS.map((group) => (
+              <div key={group.heading} style={styles.permissionGroup}>
+                <div style={styles.permissionGroupTitle}>{group.heading}</div>
+                <div style={styles.permissionsGrid}>
+                  {group.options.map((opt) => (
+                    <label key={opt.key} style={styles.permissionItem}>
+                      <input
+                        type="checkbox"
+                        checked={permissions.includes(opt.key)}
+                        onChange={(e) => {
+                          setPermissions((prev) =>
+                            e.target.checked ? Array.from(new Set([...prev, opt.key])) : prev.filter((p) => p !== opt.key)
+                          );
+                        }}
+                      />
+                      <span>{opt.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
         </div>
@@ -178,10 +205,12 @@ const styles = {
   cardTitle: { marginTop: 0, marginBottom: 10, fontSize: 16 },
   form: { display: "grid", gap: 10 },
   input: { padding: "10px 12px", borderRadius: 8, border: "1px solid #d4d4d4" },
-  permissionsGrid: { display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 8 },
+  permissionGroups: { display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 10 },
+  permissionGroup: { border: "1px solid #e5e7eb", borderRadius: 8, padding: 8, background: "#fff" },
+  permissionGroupTitle: { fontSize: 13, fontWeight: 700, color: "#111827", marginBottom: 6 },
+  permissionsGrid: { display: "grid", gridTemplateColumns: "1fr", gap: 8 },
   permissionItem: { display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "#374151" },
   btnPrimary: { padding: "10px 14px", borderRadius: 8, border: "none", background: "#355e3b", color: "#fff", cursor: "pointer" },
   btnSecondary: { padding: "8px 12px", borderRadius: 8, border: "1px solid #d1d5db", background: "#fff", cursor: "pointer" },
   btnDanger: { padding: "8px 12px", borderRadius: 8, border: "none", background: "#c0392b", color: "#fff", cursor: "pointer" },
 };
-

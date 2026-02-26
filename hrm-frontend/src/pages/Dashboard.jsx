@@ -22,15 +22,35 @@ import {
 import formatCurrency from "../utils/formatCurrency";
 import AttendanceCalendar from "../components/AttendanceCalendar";
 
-const PERMISSION_OPTIONS = [
-  { key: "leave:view", label: "View Leaves" },
-  { key: "leave:approve", label: "Approve/Reject Leaves" },
-  { key: "attendance:view", label: "View Attendance" },
-  { key: "attendance:mark", label: "Mark Attendance" },
-  { key: "payroll:view", label: "View Payroll" },
-  { key: "payroll:generate", label: "Generate Payroll" },
-  { key: "employee:view", label: "View Employees" },
-  { key: "employee:edit", label: "Edit Employees" },
+const PERMISSION_GROUPS = [
+  {
+    heading: "Leaves",
+    options: [
+      { key: "leave:view", label: "View" },
+      { key: "leave:approve", label: "Accept/ Reject" },
+    ],
+  },
+  {
+    heading: "Attendance",
+    options: [
+      { key: "attendance:view", label: "View" },
+      { key: "attendance:mark", label: "Mark" },
+    ],
+  },
+  {
+    heading: "Payroll",
+    options: [
+      { key: "payroll:view", label: "View" },
+      { key: "payroll:generate", label: "Generate" },
+    ],
+  },
+  {
+    heading: "Employees",
+    options: [
+      { key: "employee:view", label: "View" },
+      { key: "employee:edit", label: "Edit" },
+    ],
+  },
 ];
 
 function Dashboard({ token }) {
@@ -466,22 +486,29 @@ function Dashboard({ token }) {
                       <div style={{ fontWeight: 700, marginBottom: 8, fontSize: 13, color: "#374151" }}>
                         Permissions
                       </div>
-                      <div style={styles.permissionsList}>
-                        {PERMISSION_OPTIONS.map((opt) => (
-                          <label key={`create-${opt.key}`} style={styles.permissionItem}>
-                            <input
-                              type="checkbox"
-                              checked={createAdminPermissions.includes(opt.key)}
-                              onChange={(e) => {
-                                setCreateAdminPermissions((prev) =>
-                                  e.target.checked
-                                    ? Array.from(new Set([...prev, opt.key]))
-                                    : prev.filter((p) => p !== opt.key)
-                                );
-                              }}
-                            />
-                            <span>{opt.label}</span>
-                          </label>
+                      <div style={styles.permissionGroups}>
+                        {PERMISSION_GROUPS.map((group) => (
+                          <div key={`create-group-${group.heading}`} style={styles.permissionGroup}>
+                            <div style={styles.permissionGroupTitle}>{group.heading}</div>
+                            <div style={styles.permissionsList}>
+                              {group.options.map((opt) => (
+                                <label key={`create-${opt.key}`} style={styles.permissionItem}>
+                                  <input
+                                    type="checkbox"
+                                    checked={createAdminPermissions.includes(opt.key)}
+                                    onChange={(e) => {
+                                      setCreateAdminPermissions((prev) =>
+                                        e.target.checked
+                                          ? Array.from(new Set([...prev, opt.key]))
+                                          : prev.filter((p) => p !== opt.key)
+                                      );
+                                    }}
+                                  />
+                                  <span>{opt.label}</span>
+                                </label>
+                              ))}
+                            </div>
+                          </div>
                         ))}
                       </div>
                     </div>
@@ -551,10 +578,7 @@ function Dashboard({ token }) {
                               <button
                                 style={styles.actionButton}
                                 disabled={adminLoading}
-                                onClick={() => {
-                                  setPermissionDraft(Array.isArray(selectedAdmin.permissions) ? selectedAdmin.permissions : []);
-                                  setPermissionEditorOpen(true);
-                                }}
+                                onClick={() => navigate(`/admins/${selectedAdmin._id}`)}
                               >
                                 Permissions
                               </button>
@@ -577,22 +601,29 @@ function Dashboard({ token }) {
                             {permissionEditorOpen && (
                               <div style={styles.permissionsEditor}>
                                 <div style={{ fontWeight: 700, marginBottom: 8 }}>Select Permissions</div>
-                                <div style={styles.permissionsList}>
-                                  {PERMISSION_OPTIONS.map((opt) => (
-                                    <label key={opt.key} style={styles.permissionItem}>
-                                      <input
-                                        type="checkbox"
-                                        checked={permissionDraft.includes(opt.key)}
-                                        onChange={(e) => {
-                                          setPermissionDraft((prev) =>
-                                            e.target.checked
-                                              ? Array.from(new Set([...prev, opt.key]))
-                                              : prev.filter((p) => p !== opt.key)
-                                          );
-                                        }}
-                                      />
-                                      <span>{opt.label}</span>
-                                    </label>
+                                <div style={styles.permissionGroups}>
+                                  {PERMISSION_GROUPS.map((group) => (
+                                    <div key={`edit-group-${group.heading}`} style={styles.permissionGroup}>
+                                      <div style={styles.permissionGroupTitle}>{group.heading}</div>
+                                      <div style={styles.permissionsList}>
+                                        {group.options.map((opt) => (
+                                          <label key={opt.key} style={styles.permissionItem}>
+                                            <input
+                                              type="checkbox"
+                                              checked={permissionDraft.includes(opt.key)}
+                                              onChange={(e) => {
+                                                setPermissionDraft((prev) =>
+                                                  e.target.checked
+                                                    ? Array.from(new Set([...prev, opt.key]))
+                                                    : prev.filter((p) => p !== opt.key)
+                                                );
+                                              }}
+                                            />
+                                            <span>{opt.label}</span>
+                                          </label>
+                                        ))}
+                                      </div>
+                                    </div>
                                   ))}
                                 </div>
                                 <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
@@ -785,8 +816,25 @@ const styles = {
   },
   permissionsList: {
     display: "grid",
-    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+    gridTemplateColumns: "1fr",
     gap: 6,
+  },
+  permissionGroups: {
+    display: "grid",
+    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+    gap: 10,
+  },
+  permissionGroup: {
+    border: "1px solid #e5e7eb",
+    borderRadius: 8,
+    padding: 8,
+    background: "#fff",
+  },
+  permissionGroupTitle: {
+    fontSize: 13,
+    fontWeight: 700,
+    color: "#111827",
+    marginBottom: 6,
   },
   permissionItem: {
     display: "flex",

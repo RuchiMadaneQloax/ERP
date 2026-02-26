@@ -32,6 +32,12 @@ function shiftMonth(monthString, delta) {
   return getMonthStringFromDate(d);
 }
 
+function isWeekendDay(year, monthIndex, day) {
+  const value = new Date(year, monthIndex, day);
+  const weekday = value.getDay();
+  return weekday === 0 || weekday === 6;
+}
+
 const WEEK_DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 const STATUS_META = {
@@ -100,6 +106,7 @@ export default function AttendanceCalendar({
     if (attendance?.isHoliday) return STATUS_META.holiday;
     if (leave) return STATUS_META.leave;
     if (attendance?.status && STATUS_META[attendance.status]) return STATUS_META[attendance.status];
+    if (isWeekendDay(year, monthIndex, day)) return STATUS_META.holiday;
     return STATUS_META.none;
   };
 

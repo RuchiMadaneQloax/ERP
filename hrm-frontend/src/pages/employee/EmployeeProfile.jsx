@@ -16,6 +16,7 @@ export default function EmployeeProfile() {
   const [processingAttendance, setProcessingAttendance] = useState(false);
   const [faceMode, setFaceMode] = useState("enroll");
   const [actionMessage, setActionMessage] = useState("");
+  const [capturedEnrollImages, setCapturedEnrollImages] = useState([]);
   const webcamRef = useRef(null);
 
   useEffect(() => {
@@ -42,17 +43,17 @@ export default function EmployeeProfile() {
 
   const handleFaceEnroll = async () => {
     setActionMessage("");
-    const imageSrc = webcamRef.current?.getScreenshot?.();
-    if (!imageSrc) {
-      setActionMessage("Could not capture photo. Please allow camera access and try again.");
+    if (capturedEnrollImages.length !== 3) {
+      setActionMessage("Capture exactly 3 photos before registering.");
       return;
     }
 
     try {
       setEnrolling(true);
-      const res = await enrollMyFace(imageSrc, effectiveToken);
+      const res = await enrollMyFace(capturedEnrollImages, effectiveToken);
       if (res?.message) {
         setActionMessage(`${res.message}. You can now mark attendance.`);
+        setCapturedEnrollImages([]);
         setProfile((prev) => ({ ...(prev || {}), faceEnrolled: true }));
         setFaceMode("mark");
       } else {
@@ -63,6 +64,26 @@ export default function EmployeeProfile() {
     } finally {
       setEnrolling(false);
     }
+  };
+
+  const captureEnrollPhoto = () => {
+    if (capturedEnrollImages.length >= 3) return;
+    const imageSrc = webcamRef.current?.getScreenshot?.();
+    if (!imageSrc) {
+      setActionMessage("Could not capture photo. Please allow camera access and try again.");
+      return;
+    }
+    setCapturedEnrollImages((prev) => [...prev, imageSrc]);
+    setActionMessage("");
+  };
+
+  const removeEnrollPhoto = (index) => {
+    setCapturedEnrollImages((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const resetEnrollPhotos = () => {
+    setCapturedEnrollImages([]);
+    setActionMessage("");
   };
 
   const handleMarkAttendance = async () => {
@@ -152,7 +173,7 @@ export default function EmployeeProfile() {
         <p style={styles.helperText}>
           {faceMode === "mark"
             ? "Face is registered. Capture your photo to mark daily attendance."
-            : "Capture a clear front-facing photo to register your face for biometric attendance."}
+            : "Capture 3 clear front-facing photos to register biometric attendance."}
         </p>
         <div style={styles.faceGrid}>
           <div style={styles.webcamWrap}>
@@ -187,9 +208,47 @@ export default function EmployeeProfile() {
               </>
             ) : (
               <>
-                <button type="button" style={styles.enrollButton} onClick={handleFaceEnroll} disabled={enrolling}>
-                  {enrolling ? "Registering..." : (profile?.faceEnrolled ? "Update Face Data" : "Register Face")}
+                <button
+                  type="button"
+                  style={styles.secondaryButton}
+                  onClick={captureEnrollPhoto}
+                  disabled={enrolling || capturedEnrollImages.length >= 3}
+                >
+                  {capturedEnrollImages.length >= 3 ? "3 Photos Captured" : "Capture Photo"}
                 </button>
+                <div style={styles.captureStatus}>
+                  Captured: {capturedEnrollImages.length}/3
+                </div>
+                {capturedEnrollImages.length > 0 && (
+                  <div style={styles.previewGrid}>
+                    {capturedEnrollImages.map((img, idx) => (
+                      <div key={`face-${idx}`} style={styles.previewCard}>
+                        <img src={img} alt={`Face ${idx + 1}`} style={styles.previewImage} />
+                        <button
+                          type="button"
+                          style={styles.previewRemove}
+                          onClick={() => removeEnrollPhoto(idx)}
+                          disabled={enrolling}
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <button type="button" style={styles.enrollButton} onClick={handleFaceEnroll} disabled={enrolling}>
+                  {enrolling ? "Registering..." : (profile?.faceEnrolled ? "Update Face Data (3 Photos)" : "Register Face (3 Photos)")}
+                </button>
+                {capturedEnrollImages.length > 0 && (
+                  <button
+                    type="button"
+                    style={styles.secondaryButton}
+                    onClick={resetEnrollPhotos}
+                    disabled={enrolling}
+                  >
+                    Reset Captures
+                  </button>
+                )}
                 {profile?.faceEnrolled && (
                   <button
                     type="button"
@@ -204,7 +263,7 @@ export default function EmployeeProfile() {
             )}
             {actionMessage && <div style={styles.enrollMessage}>{actionMessage}</div>}
             {!profile?.faceEnrolled && (
-              <div style={styles.tipBox}>Tip: Register your face once, then this section switches to daily attendance marking.</div>
+              <div style={styles.tipBox}>Tip: Capture 3 photos with slightly different angles for better matching accuracy.</div>
             )}
           </div>
         </div>
@@ -368,6 +427,41 @@ const styles = {
     fontSize: 13,
     fontWeight: 600,
     maxWidth: 420,
+  },
+  captureStatus: {
+    color: "#8b2557",
+    fontSize: 13,
+    fontWeight: 700,
+  },
+  previewGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+    gap: 8,
+    maxWidth: 460,
+  },
+  previewCard: {
+    border: "1px solid #f2c9dc",
+    borderRadius: 10,
+    overflow: "hidden",
+    background: "#fff",
+    display: "flex",
+    flexDirection: "column",
+  },
+  previewImage: {
+    width: "100%",
+    height: 90,
+    objectFit: "cover",
+    display: "block",
+  },
+  previewRemove: {
+    border: "none",
+    borderTop: "1px solid #f2c9dc",
+    background: "#fff8fc",
+    color: "#8b2557",
+    fontWeight: 700,
+    fontSize: 12,
+    padding: "6px 8px",
+    cursor: "pointer",
   },
   tipBox: {
     border: "1px dashed #e8aeca",

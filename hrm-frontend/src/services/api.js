@@ -93,6 +93,19 @@ export const createDepartment = async (data, token) => {
   return response.json();
 };
 
+export const updateDepartment = async (id, data, token) => {
+  const response = await fetch(`${BASE_URL}/departments/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+
+  return response.json();
+};
+
 // =========================
 // DESIGNATIONS
 // =========================
@@ -109,6 +122,19 @@ export const getDesignations = async (token) => {
 export const createDesignation = async (data, token) => {
   const response = await fetch(`${BASE_URL}/designations`, {
     method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+
+  return response.json();
+};
+
+export const updateDesignation = async (id, data, token) => {
+  const response = await fetch(`${BASE_URL}/designations/${id}`, {
+    method: "PUT",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
@@ -346,14 +372,14 @@ export const getMyEmployeeProfile = async (token) => {
   return response.json();
 };
 
-export const enrollMyFace = async (image, token) => {
+export const enrollMyFace = async (images, token) => {
   const response = await fetch(`${BASE_URL}/employee-auth/face-enroll`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify({ image }),
+    body: JSON.stringify({ images }),
   });
   const data = await response.json();
   if (!response.ok) {

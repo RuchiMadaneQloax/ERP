@@ -1,6 +1,13 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
-import { createDepartment, createDesignation, getDepartments, getDesignations } from "../services/api";
+import {
+  createDepartment,
+  createDesignation,
+  getDepartments,
+  getDesignations,
+  updateDepartment,
+  updateDesignation,
+} from "../services/api";
 
 export default function OrgSetup() {
   const { token, role } = useAuth();
@@ -89,6 +96,77 @@ export default function OrgSetup() {
     }
   };
 
+  const editDepartment = async (dept) => {
+    const name = prompt("Department name", dept.name || "");
+    if (name === null) return;
+    const code = prompt("Department code", dept.code || "");
+    if (code === null) return;
+    const description = prompt("Department description", dept.description || "");
+    if (description === null) return;
+
+    if (!String(name).trim() || !String(code).trim()) {
+      alert("Department name and code are required");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const res = await updateDepartment(
+        dept._id,
+        {
+          name: String(name).trim(),
+          code: String(code).trim().toUpperCase(),
+          description: String(description).trim(),
+        },
+        effectiveToken
+      );
+      if (res?._id) {
+        await loadData();
+      } else {
+        alert(res?.message || "Could not update department");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const editDesignation = async (desig) => {
+    const title = prompt("Designation title", desig.title || "");
+    if (title === null) return;
+    const department = prompt("Department ID", desig.department?._id || "");
+    if (department === null) return;
+    const baseSalary = prompt("Base salary", String(desig.baseSalary ?? ""));
+    if (baseSalary === null) return;
+    const level = prompt("Level (1-10)", String(desig.level ?? 1));
+    if (level === null) return;
+
+    if (!String(title).trim() || !String(department).trim() || !String(baseSalary).trim() || !String(level).trim()) {
+      alert("All designation fields are required");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const res = await updateDesignation(
+        desig._id,
+        {
+          title: String(title).trim(),
+          department: String(department).trim(),
+          baseSalary: Number(baseSalary),
+          level: Number(level),
+        },
+        effectiveToken
+      );
+      if (res?._id) {
+        await loadData();
+      } else {
+        alert(res?.message || "Could not update designation");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (effectiveRole !== "superadmin") {
     return (
       <div style={styles.page}>
@@ -100,7 +178,7 @@ export default function OrgSetup() {
   return (
     <div style={styles.page}>
       <h2 style={styles.title}>Organization Setup</h2>
-      <p style={styles.subtitle}>Create departments and designations.</p>
+      <p style={styles.subtitle}>Create and edit departments and designations.</p>
 
       <div style={styles.grid}>
         <div style={styles.card}>
@@ -145,8 +223,13 @@ export default function OrgSetup() {
           <div style={styles.list}>
             {departments.map((d) => (
               <div key={d._id} style={styles.row}>
-                <div style={{ fontWeight: 700 }}>{d.name}</div>
-                <div style={{ fontSize: 12, color: "#6b7280" }}>{d.code}</div>
+                <div>
+                  <div style={{ fontWeight: 700 }}>{d.name}</div>
+                  <div style={{ fontSize: 12, color: "#6b7280" }}>{d.code}</div>
+                </div>
+                <button style={styles.secondaryButton} type="button" disabled={loading} onClick={() => editDepartment(d)}>
+                  Edit
+                </button>
               </div>
             ))}
             {departments.length === 0 && <div style={styles.empty}>No departments yet.</div>}
@@ -158,10 +241,15 @@ export default function OrgSetup() {
           <div style={styles.list}>
             {designations.map((d) => (
               <div key={d._id} style={styles.row}>
-                <div style={{ fontWeight: 700 }}>{d.title}</div>
-                <div style={{ fontSize: 12, color: "#6b7280" }}>
-                  {d.department?.name} • Base: {d.baseSalary} • Level: {d.level}
+                <div>
+                  <div style={{ fontWeight: 700 }}>{d.title}</div>
+                  <div style={{ fontSize: 12, color: "#6b7280" }}>
+                    {d.department?.name} - Base: {d.baseSalary} - Level: {d.level}
+                  </div>
                 </div>
+                <button style={styles.secondaryButton} type="button" disabled={loading} onClick={() => editDesignation(d)}>
+                  Edit
+                </button>
               </div>
             ))}
             {designations.length === 0 && <div style={styles.empty}>No designations yet.</div>}
@@ -194,8 +282,9 @@ const styles = {
   form: { display: "grid", gap: 10 },
   input: { padding: "10px 12px", borderRadius: 8, border: "1px solid #d4d4d4" },
   primaryButton: { padding: "10px 14px", borderRadius: 8, border: "none", background: "#355e3b", color: "#fff", cursor: "pointer" },
+  secondaryButton: { padding: "6px 10px", borderRadius: 8, border: "1px solid #d1d5db", background: "#fff", color: "#111827", cursor: "pointer" },
   list: { display: "flex", flexDirection: "column", gap: 8 },
-  row: { background: "#fff", border: "1px solid #eee", borderRadius: 8, padding: 10 },
+  row: { background: "#fff", border: "1px solid #eee", borderRadius: 8, padding: 10, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 },
   empty: { color: "#6b7280", fontSize: 13 },
 };
 
