@@ -78,9 +78,8 @@ exports.me = async (req, res) => {
       .populate('designation', 'title level');
     if (!emp) return res.status(404).json({ message: 'Employee not found' });
     const out = emp.toObject();
-    const hasSingleEmbedding = Array.isArray(emp.faceEmbedding) && emp.faceEmbedding.length > 0;
-    const hasMultiEmbeddings = Array.isArray(emp.faceEmbeddings) && emp.faceEmbeddings.length > 0;
-    out.faceEnrolled = hasSingleEmbedding || hasMultiEmbeddings;
+    const hasThreeEmbeddings = Array.isArray(emp.faceEmbeddings) && emp.faceEmbeddings.length >= 3;
+    out.faceEnrolled = hasThreeEmbeddings;
     delete out.faceEmbedding;
     delete out.faceEmbeddings;
     res.json(out);
@@ -100,8 +99,8 @@ exports.enrollFace = async (req, res) => {
       : image
       ? [image]
       : [];
-    if (normalizedImages.length < 3) {
-      return res.status(400).json({ message: 'At least 3 face images are required' });
+    if (normalizedImages.length !== 3) {
+      return res.status(400).json({ message: 'Exactly 3 face images are required' });
     }
 
     const emp = await Employee.findById(id).select('_id status');

@@ -15,7 +15,7 @@ const attendanceSchema = new mongoose.Schema(
 
     status: {
       type: String,
-      enum: ["present", "absent", "half-day"],
+      enum: ["present", "absent", "half-day", "holiday"],
       required: true,
     },
 
@@ -32,7 +32,7 @@ const attendanceSchema = new mongoose.Schema(
     markedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Admin",
-      required: true,
+      required: false,
     },
 
     // ✅ NEW OPTIONAL FIELDS FOR FACE SYSTEM
@@ -46,7 +46,7 @@ const attendanceSchema = new mongoose.Schema(
 
     method: {
       type: String,
-      enum: ["manual", "face"],
+      enum: ["manual", "face", "system"],
       default: "manual",
     },
   },
