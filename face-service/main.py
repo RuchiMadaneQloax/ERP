@@ -27,6 +27,7 @@ load_dotenv()
 MONGO_URI = os.environ.get("MONGO_URI")
 DB_NAME = os.environ.get("DB_NAME", "hrm")
 MATCH_THRESHOLD = float(os.environ.get("FACE_MATCH_THRESHOLD", "0.5"))
+TOP2_GAP_THRESHOLD = float(os.environ.get("FACE_TOP2_GAP_THRESHOLD", "0.03"))
 
 if not MONGO_URI:
     raise ValueError("MONGO_URI environment variable not set")
@@ -52,24 +53,45 @@ def cosine_similarity(a: np.ndarray, b: np.ndarray) -> float:
     return float(np.dot(a, b) / denom)
 
 
-def extract_embedding(image_base64: str):
+def decode_image(image_base64: str):
     try:
         image_data = base64.b64decode(image_base64.split(",")[-1])
         image = Image.open(io.BytesIO(image_data)).convert("RGB")
+        return np.array(image)
+    except Exception as exc:
+        print("Image decode error:", exc)
+        return None
+
+
+def extract_embedding(image_base64: str):
+    try:
+        image_array = decode_image(image_base64)
+        if image_array is None:
+            return None, "Invalid image data"
+
+        # Enforce single-face rule to avoid mismatches with group frames.
+        faces = DeepFace.extract_faces(
+            img_path=image_array,
+            detector_backend="retinaface",
+            enforce_detection=True,
+        )
+        if len(faces) != 1:
+            return None, "Exactly one face must be visible in the frame"
 
         embedding = DeepFace.represent(
-            img_path=np.array(image),
+            img_path=image_array,
             model_name="ArcFace",
-            enforce_detection=False,
+            detector_backend="retinaface",
+            enforce_detection=True,
         )
 
         if not embedding:
-            return None
+            return None, "Face embedding could not be generated"
 
-        return np.array(embedding[0]["embedding"], dtype=np.float32)
+        return np.array(embedding[0]["embedding"], dtype=np.float32), None
     except Exception as exc:
         print("Embedding error:", exc)
-        return None
+        return None, "Exactly one clear face is required"
 
 
 def collect_enroll_images(payload: EnrollRequest) -> List[str]:
@@ -83,17 +105,25 @@ def collect_enroll_images(payload: EnrollRequest) -> List[str]:
 @app.post("/enroll/{employee_id}")
 def enroll_face(employee_id: str, data: EnrollRequest):
     images = collect_enroll_images(data)
-    if not images:
-        raise HTTPException(status_code=400, detail="At least one face image is required")
+    if len(images) != 3:
+        raise HTTPException(status_code=400, detail="Exactly 3 face images are required")
 
     embeddings = []
-    for img in images:
-        emb = extract_embedding(img)
+    for index, img in enumerate(images):
+        emb, error = extract_embedding(img)
+        if error:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Image {index + 1}: {error}",
+            )
         if emb is not None:
             embeddings.append(emb)
 
-    if not embeddings:
-        raise HTTPException(status_code=400, detail="No valid face detected in provided images")
+    if len(embeddings) != 3:
+        raise HTTPException(
+            status_code=400,
+            detail="Face must be detected in all 3 images",
+        )
 
     primary_embedding = np.mean(np.stack(embeddings), axis=0)
 
@@ -114,7 +144,7 @@ def enroll_face(employee_id: str, data: EnrollRequest):
         return {
             "message": "Face enrolled successfully",
             "employeeId": employee_id,
-            "embeddingsCount": len(embeddings),
+            "embeddingsCount": 3,
         }
     except HTTPException:
         raise
@@ -124,42 +154,52 @@ def enroll_face(employee_id: str, data: EnrollRequest):
 
 @app.post("/recognize")
 def recognize_face(data: FaceRequest):
-    new_embedding = extract_embedding(data.image)
+    new_embedding, validation_error = extract_embedding(data.image)
+    if validation_error:
+        return {"employeeId": None, "confidence": 0.0, "validationError": validation_error}
     if new_embedding is None:
         return {"employeeId": None, "confidence": 0.0}
 
-    best_match_id = None
-    best_score = -1.0
+    scored_candidates = []
 
-    employees = employees_collection.find(
-        {
-            "$or": [
-                {"faceEmbeddings.0": {"$exists": True}},
-                {"faceEmbedding": {"$ne": None}},
-            ]
-        }
-    )
+    employees = employees_collection.find({"faceEmbeddings.2": {"$exists": True}})
 
     for emp in employees:
-        candidate_embeddings = []
+        stored_embeddings = emp.get("faceEmbeddings", [])
+        if not isinstance(stored_embeddings, list) or len(stored_embeddings) < 3:
+            continue
 
-        if isinstance(emp.get("faceEmbeddings"), list) and emp["faceEmbeddings"]:
-            candidate_embeddings.extend(emp["faceEmbeddings"])
-
-        if isinstance(emp.get("faceEmbedding"), list) and emp["faceEmbedding"]:
-            candidate_embeddings.append(emp["faceEmbedding"])
-
-        for stored in candidate_embeddings:
+        similarities = []
+        for stored in stored_embeddings[:3]:
             stored_embedding = np.array(stored, dtype=np.float32)
-            similarity = cosine_similarity(new_embedding, stored_embedding)
-            if similarity > best_score:
-                best_score = similarity
-                best_match_id = str(emp["_id"])
+            similarities.append(cosine_similarity(new_embedding, stored_embedding))
 
-    if best_score > MATCH_THRESHOLD and best_match_id:
-        return {"employeeId": best_match_id, "confidence": float(round(best_score, 3))}
+        avg_similarity = float(np.mean(similarities))
+        all_three_match = all(s >= MATCH_THRESHOLD for s in similarities)
 
-    return {"employeeId": None, "confidence": float(round(max(best_score, 0.0), 3))}
+        if all_three_match:
+            scored_candidates.append((str(emp["_id"]), avg_similarity))
+
+    if not scored_candidates:
+        return {"employeeId": None, "confidence": 0.0}
+
+    scored_candidates.sort(key=lambda x: x[1], reverse=True)
+    best_match_id, best_score = scored_candidates[0]
+    second_best_score = scored_candidates[1][1] if len(scored_candidates) > 1 else -1.0
+    top2_gap = best_score - second_best_score if second_best_score >= 0 else best_score
+
+    if best_score >= MATCH_THRESHOLD and top2_gap >= TOP2_GAP_THRESHOLD:
+        return {
+            "employeeId": best_match_id,
+            "confidence": float(round(best_score, 3)),
+            "top2Gap": float(round(top2_gap, 3)),
+        }
+
+    return {
+        "employeeId": None,
+        "confidence": float(round(max(best_score, 0.0), 3)),
+        "top2Gap": float(round(max(top2_gap, 0.0), 3)),
+    }
 
 
 @app.get("/")
