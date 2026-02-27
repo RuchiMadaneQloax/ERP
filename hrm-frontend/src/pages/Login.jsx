@@ -8,6 +8,8 @@ const EMPLOYEE_DEFAULT_PASSWORD = "ChangeMe123";
 export default function Login() {
   const navigate = useNavigate();
   const { setToken } = useAuth();
+  const apiRoot = (import.meta.env.VITE_API_URL || "http://localhost:5000").replace(/\/+$/, "");
+  const baseUrl = apiRoot.endsWith("/api") ? apiRoot : `${apiRoot}/api`;
 
   const [activeSlide, setActiveSlide] = useState("admin");
   const [showPassword, setShowPassword] = useState(false);
@@ -66,8 +68,8 @@ export default function Login() {
       setLoading(true);
       const endpoint =
         activeSlide === "admin"
-          ? `${import.meta.env.VITE_API_URL}/api/auth/login`
-          : `${import.meta.env.VITE_API_URL}/api/employee-auth/login`;
+          ? `${baseUrl}/auth/login`
+          : `${baseUrl}/employee-auth/login`;
 
       const response = await fetch(endpoint, {
         method: "POST",
@@ -238,21 +240,21 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    background: '#efe6da' /* light brown */,
+    background: 'linear-gradient(160deg, #2d2238 0%, #3b2a4c 45%, #4a345f 100%)',
     padding: 20
   },
   card: {
     width: '100%',
     maxWidth: 500,
-    background: '#F7F6F3',
+    background: '#1f1829',
     borderRadius: 14,
     padding: 28,
-    boxShadow: '0 8px 30px rgba(16,24,40,0.08)',
-    border: '1px solid rgba(0,0,0,0.03)'
+    boxShadow: '0 14px 40px rgba(0,0,0,0.35)',
+    border: '1px solid #5d4675'
   },
   header: { textAlign: 'center', marginBottom: 18 },
-  brand: { fontSize: 22, fontWeight: 800, color: '#24492f' },
-  brandSubtitle: { fontSize: 12, color: '#6b7280', marginTop: 6 },
+  brand: { fontSize: 22, fontWeight: 800, color: '#f1e6ff' },
+  brandSubtitle: { fontSize: 12, color: '#c7b3dc', marginTop: 6 },
   slideSwitcher: {
     display: "grid",
     gridTemplateColumns: "1fr 1fr",
@@ -260,18 +262,18 @@ const styles = {
     marginBottom: 14,
   },
   slideButton: {
-    border: "1px solid #d1d5db",
+    border: "1px solid #6f5a87",
     borderRadius: 10,
-    background: "#fff",
+    background: "#2a2035",
     padding: "8px 10px",
     cursor: "pointer",
     fontWeight: 600,
-    color: "#374151",
+    color: "#e3d4f3",
   },
   slideButtonActive: {
-    background: "#355E3B",
-    color: "#fff",
-    borderColor: "#355E3B",
+    background: "#9b7bc5",
+    color: "#1f1829",
+    borderColor: "#9b7bc5",
   },
   form: { display: 'flex', flexDirection: 'column', gap: 8, marginTop: 6 },
   slideViewport: { overflow: "hidden", width: "100%" },
@@ -286,11 +288,11 @@ const styles = {
     padding: "0 6px",
   },
   fieldGroup: { marginBottom: 12 },
-  label: { display: "block", fontSize: 13, color: '#374151', marginBottom: 6 },
-  input: { width: "100%", boxSizing: "border-box", padding: '10px 12px', borderRadius: 10, border: '1px solid #ddd', outline: 'none' },
+  label: { display: "block", fontSize: 13, color: '#d8c7eb', marginBottom: 6 },
+  input: { width: "100%", boxSizing: "border-box", padding: '10px 12px', borderRadius: 10, border: '1px solid #70598a', background: '#2b2237', color: '#f6eeff', outline: 'none' },
   passwordWrap: { position: "relative" },
-  eyeButton: { position: 'absolute', right: 8, top: "50%", transform: "translateY(-50%)", border: 'none', background: 'transparent', cursor: 'pointer' },
-  submit: { marginTop: 12, padding: '10px 14px', borderRadius: 10, border: 'none', background: '#355E3B', color: '#fff', fontWeight: 700, cursor: 'pointer' },
-  hint: { fontSize: 12, color: "#6b7280", marginTop: 6 },
+  eyeButton: { position: 'absolute', right: 8, top: "50%", transform: "translateY(-50%)", border: 'none', background: 'transparent', cursor: 'pointer', color: '#d8c7eb' },
+  submit: { marginTop: 12, padding: '10px 14px', borderRadius: 10, border: 'none', background: '#b596db', color: '#1f1829', fontWeight: 700, cursor: 'pointer' },
+  hint: { fontSize: 12, color: "#bca7d6", marginTop: 6 },
   error: { color: '#dc2626', fontSize: 12, marginTop: 6 }
 };

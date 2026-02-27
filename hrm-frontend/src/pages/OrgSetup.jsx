@@ -262,7 +262,7 @@ export default function OrgSetup() {
 
 const styles = {
   page: {
-    background: "#efe9f6",
+    background: "#e1d7ee",
     minHeight: "100vh",
     padding: 24,
     display: "flex",
@@ -273,7 +273,7 @@ const styles = {
   subtitle: { margin: 0, color: "#6b7280" },
   grid: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 },
   card: {
-    background: "#faf7ff",
+    background: "#f4eefb",
     border: "1px solid #ececec",
     borderRadius: 12,
     padding: 14,

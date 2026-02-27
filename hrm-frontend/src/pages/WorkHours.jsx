@@ -108,7 +108,7 @@ export default function WorkHours({ token }) {
 }
 
 const styles = {
-  container: { background: "#efe9f6", minHeight: "100vh", padding: 24, display: "flex", flexDirection: "column", gap: 12 },
+  container: { background: "#e1d7ee", minHeight: "100vh", padding: 24, display: "flex", flexDirection: "column", gap: 12 },
   header: { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" },
   filters: { display: "flex", gap: 8, flexWrap: "wrap" },
   input: { padding: "8px 10px", border: "1px solid #d1d5db", borderRadius: 8, background: "#fff" },

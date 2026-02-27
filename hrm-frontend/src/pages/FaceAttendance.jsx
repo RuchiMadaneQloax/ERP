@@ -10,6 +10,7 @@ const FaceAttendance = () => {
   const [error, setError] = useState(null);
 
   const baseUrl = (import.meta.env.VITE_API_URL || "http://localhost:5000").replace(/\/+$/, "");
+  const kioskKey = import.meta.env.VITE_KIOSK_FACE_KEY;
 
   const captureAndMark = async (nextAction = action) => {
     setError(null);
@@ -24,10 +25,16 @@ const FaceAttendance = () => {
         return;
       }
 
-      const response = await axios.post(`${baseUrl}/api/attendance/face`, {
-        image: imageSrc,
-        action: nextAction,
-      });
+      const response = await axios.post(
+        `${baseUrl}/api/attendance/face`,
+        {
+          image: imageSrc,
+          action: nextAction,
+        },
+        {
+          headers: kioskKey ? { "x-kiosk-key": kioskKey } : {},
+        }
+      );
 
       setResult(response.data);
     } catch (err) {

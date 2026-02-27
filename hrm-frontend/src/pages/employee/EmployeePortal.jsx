@@ -82,7 +82,7 @@ export default function EmployeePortal() {
 
 const styles = {
   page: {
-    backgroundColor: '#efe9f6',
+    backgroundColor: '#e1d7ee',
     minHeight: '100vh',
     padding: 28,
     display: 'flex',
@@ -173,7 +173,7 @@ const styles = {
     color: '#fff',
   },
   contentCard: {
-    background: '#faf7ff',
+    background: '#f4eefb',
     border: '1px solid #decff1',
     borderRadius: 14,
     boxShadow: '0 8px 24px rgba(81, 55, 112, 0.08)',

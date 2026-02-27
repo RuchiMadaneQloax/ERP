@@ -51,7 +51,6 @@ export default function Topbar() {
               {role.toUpperCase()}
             </div>
           )}
-          <button style={styles.iconButton} title="Notifications">🔔</button>
           <button style={styles.profileButton} title="Profile">
             {payload?.name ? payload.name.split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase() : "JD"}
           </button>
@@ -104,12 +103,6 @@ const styles = {
     borderRadius: "8px",
     fontSize: "13px",
     fontWeight: "600",
-    cursor: "pointer",
-  },
-  iconButton: {
-    background: "transparent",
-    border: "none",
-    fontSize: 16,
     cursor: "pointer",
   },
   profileButton: {

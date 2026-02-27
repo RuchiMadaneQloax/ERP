@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import {
   getEmployees,
@@ -407,7 +406,7 @@ function Dashboard({ token }) {
               style={styles.searchInput}
             />
             <button onClick={handleSearch} style={styles.searchButton} title="Search">
-              <Search size={16} />
+              Search
             </button>
           </div>
         </div>
@@ -748,7 +747,7 @@ export default Dashboard;
 
 const styles = {
   container: {
-    backgroundColor: "#efe9f6",
+    backgroundColor: "#e1d7ee",
     padding: "30px",
     minHeight: "100vh",
     display: "flex",
@@ -779,7 +778,7 @@ const styles = {
   statIcon: { fontSize: 16, backgroundColor: "#f3f4f6", padding: 8, borderRadius: 8, minWidth: 28, textAlign: "center" },
   statNumber: { fontSize: 20, fontWeight: 700 },
   statLabel: { fontSize: 12, color: "#6b7280" },
-  card: { backgroundColor: "#faf7ff", padding: "20px", borderRadius: "14px", boxShadow: "0 2px 6px rgba(0,0,0,0.05)" },
+  card: { backgroundColor: "#f4eefb", padding: "20px", borderRadius: "14px", boxShadow: "0 2px 6px rgba(0,0,0,0.05)" },
   sectionTitle: { fontSize: "18px", fontWeight: "600", marginBottom: "15px" },
   subSectionTitle: { margin: "0 0 10px 0", fontSize: 15, fontWeight: 700, color: "#374151" },
   adminGrid: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 },

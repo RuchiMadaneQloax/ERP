@@ -196,12 +196,12 @@ export default function AdminDetails({ token }) {
 }
 
 const styles = {
-  page: { padding: 24, display: "flex", flexDirection: "column", gap: 16, background: "#efe9f6", minHeight: "100vh" },
+  page: { padding: 24, display: "flex", flexDirection: "column", gap: 16, background: "#e1d7ee", minHeight: "100vh" },
   header: { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 },
   title: { margin: 0, fontSize: 24, fontWeight: 700 },
   subtitle: { margin: "6px 0 0 0", color: "#6b7280" },
   grid: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 },
-  card: { background: "#faf7ff", border: "1px solid #ececec", borderRadius: 12, padding: 14 },
+  card: { background: "#f4eefb", border: "1px solid #ececec", borderRadius: 12, padding: 14 },
   cardTitle: { marginTop: 0, marginBottom: 10, fontSize: 16 },
   form: { display: "grid", gap: 10 },
   input: { padding: "10px 12px", borderRadius: 8, border: "1px solid #d4d4d4" },

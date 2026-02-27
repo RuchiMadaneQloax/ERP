@@ -5,6 +5,22 @@ const Audit = require('../models/Audit');
 const { resolveEmployeeScopeMatchValues } = require('../utils/resolveEmployeeScope');
 const CompensationPolicy = require("../models/CompensationPolicy");
 
+function parsePayrollMonth(monthInput) {
+  const raw = String(monthInput || "").trim();
+  const match = raw.match(/^(\d{4})-(\d{2})(?:-\d{2})?$/);
+  if (!match) return null;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  if (!year || month < 1 || month > 12) return null;
+
+  const monthKey = `${String(year)}-${String(month).padStart(2, "0")}`;
+  const start = new Date(`${monthKey}-01T00:00:00.000Z`);
+  const nextYear = month === 12 ? year + 1 : year;
+  const nextMonth = month === 12 ? 1 : month + 1;
+  const end = new Date(`${String(nextYear)}-${String(nextMonth).padStart(2, "0")}-01T00:00:00.000Z`);
+  return { monthKey, start, end };
+}
+
 // =======================================
 // GENERATE PAYROLL
 // =======================================
@@ -25,6 +41,10 @@ exports.generatePayroll = async (req, res) => {
         message: "Employee and month are required",
       });
     }
+    const parsedMonth = parsePayrollMonth(month);
+    if (!parsedMonth) {
+      return res.status(400).json({ message: "Invalid month format. Use YYYY-MM." });
+    }
 
     const emp = await Employee.findById(employee).populate("designation");
 
@@ -34,11 +54,16 @@ exports.generatePayroll = async (req, res) => {
       });
     }
 
-  const baseSalary = overrideBaseSalary || emp.designation.baseSalary;
+    const overrideParsed = Number(overrideBaseSalary);
+    const hasOverride = overrideBaseSalary !== null && overrideBaseSalary !== undefined && Number.isFinite(overrideParsed);
+    const designationSalary = Number(emp?.designation?.baseSalary || 0);
+    const employeeSalary = Number(emp?.salary || 0);
+    const baseSalary = hasOverride ? overrideParsed : (designationSalary > 0 ? designationSalary : employeeSalary);
+    if (!Number.isFinite(baseSalary) || baseSalary <= 0) {
+      return res.status(400).json({ message: "Employee base salary is not configured" });
+    }
 
-    const start = new Date(month);
-    const end = new Date(month);
-    end.setMonth(end.getMonth() + 1);
+    const { monthKey, start, end } = parsedMonth;
 
     // Total days in month
     const totalDays = new Date(
@@ -115,9 +140,9 @@ exports.generatePayroll = async (req, res) => {
 
     const payroll = await Payroll.create({
       employee,
-      month,
+      month: monthKey,
       baseSalary,
-      dynamicBaseSalary: overrideBaseSalary || undefined,
+      dynamicBaseSalary: hasOverride ? overrideParsed : undefined,
       presentDays: present,
       absentDays: absent,
       halfDays: halfDay,
@@ -147,7 +172,7 @@ exports.generatePayroll = async (req, res) => {
         details: {
           payrollId: payroll._id,
           employee: employee,
-          month,
+          month: monthKey,
           trackedOvertimeHours: Number(trackedOvertimeHours || 0),
           additionalOvertimeHours: Number(additionalOvertimeHours || 0),
           overtimeHours: Number(effectiveOvertimeHours || 0),
@@ -211,7 +236,11 @@ exports.getMyPayrolls = async (req, res) => {
     const { month } = req.query;
     const query = { employee: { $in: employeeMatchValues } };
 
-    if (month) query.month = month;
+    if (month) {
+      const parsedMonth = parsePayrollMonth(month);
+      if (!parsedMonth) return res.status(400).json({ message: "Invalid month format. Use YYYY-MM." });
+      query.month = parsedMonth.monthKey;
+    }
 
     const payroll = await Payroll.find(query)
       .populate('employee', 'name employeeId')

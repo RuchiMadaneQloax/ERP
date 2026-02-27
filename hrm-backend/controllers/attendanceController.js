@@ -201,12 +201,20 @@ exports.markAttendanceByFace = async (req, res) => {
   try {
     const { image, action = "auto" } = req.body;
     if (!image) return res.status(400).json({ message: "Image is required" });
+    const kioskSecret = process.env.KIOSK_FACE_KEY;
+    if (kioskSecret) {
+      const incomingKey = req.headers["x-kiosk-key"];
+      if (String(incomingKey || "") !== String(kioskSecret)) {
+        return res.status(401).json({ message: "Unauthorized kiosk request" });
+      }
+    }
     const requestedAction = String(action || "auto").toLowerCase();
     if (!["auto", "checkin", "checkout"].includes(requestedAction)) {
       return res.status(400).json({ message: "Invalid action. Use auto, checkin or checkout." });
     }
 
-    const response = await axios.post("http://localhost:8000/recognize", { image });
+    const faceServiceBase = (process.env.FACE_SERVICE_URL || "http://localhost:8000").replace(/\/+$/, "");
+    const response = await axios.post(`${faceServiceBase}/recognize`, { image });
     const { employeeId, confidence, validationError } = response.data;
 
     if (validationError) {

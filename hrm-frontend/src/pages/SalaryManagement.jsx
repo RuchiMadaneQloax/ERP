@@ -299,9 +299,9 @@ export default function SalaryManagement({ token }) {
 }
 
 const styles = {
-  page: { background: "#efe9f6", minHeight: "100vh", padding: 24, display: "flex", flexDirection: "column", gap: 12 },
+  page: { background: "#e1d7ee", minHeight: "100vh", padding: 24, display: "flex", flexDirection: "column", gap: 12 },
   grid: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 },
-  card: { background: "#faf7ff", border: "1px solid #ececec", borderRadius: 12, padding: 12 },
+  card: { background: "#f4eefb", border: "1px solid #ececec", borderRadius: 12, padding: 12 },
   cardTitle: { margin: "0 0 10px 0", fontSize: 16 },
   row: { display: "grid", gap: 6, marginBottom: 8 },
   label: { fontSize: 13, color: "#374151", fontWeight: 600 },

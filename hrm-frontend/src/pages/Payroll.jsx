@@ -7,6 +7,8 @@ function Payroll({ token }) {
   const navigate = useNavigate();
 
   const effectiveToken = token ?? localStorage.getItem("token");
+  const apiRoot = (import.meta.env.VITE_API_URL || "http://localhost:5000").replace(/\/+$/, "");
+  const baseUrl = apiRoot.endsWith("/api") ? apiRoot : `${apiRoot}/api`;
 
   const [employees, setEmployees] = useState([]);
   const [selectedEmployee, setSelectedEmployee] = useState("");
@@ -43,7 +45,7 @@ function Payroll({ token }) {
     if (!employeeId) return;
 
     const response = await fetch(
-      `http://localhost:5000/api/payroll?employee=${employeeId}`,
+      `${baseUrl}/payroll?employee=${employeeId}`,
       {
         headers: {
           Authorization: `Bearer ${effectiveToken}`,
@@ -75,7 +77,7 @@ function Payroll({ token }) {
     setLoading(true);
 
     const response = await fetch(
-      "http://localhost:5000/api/payroll",
+      `${baseUrl}/payroll`,
       {
         method: "POST",
         headers: {
@@ -84,7 +86,7 @@ function Payroll({ token }) {
         },
         body: JSON.stringify({
           employee: selectedEmployee,
-          month: month + "-01",
+          month,
           overtimeHours: Number(overtimeHours || 0),
           overtimeRate: overtimeRate ? Number(overtimeRate) : null,
           holidayPay: Number(holidayPay || 0),
@@ -251,13 +253,13 @@ function Payroll({ token }) {
 export default Payroll;
 
 const styles = {
-  container: { backgroundColor: '#efe9f6', minHeight: '100vh', padding: 28 },
+  container: { backgroundColor: '#e1d7ee', minHeight: '100vh', padding: 28 },
   pageHeader: { display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:18 },
   pageTitle: { fontSize:24, fontWeight:700, margin:0 },
   pageSubtitle: { color:'#6b7280', marginTop:6 },
   backButton: { padding:'8px 12px', borderRadius:8, border:'none', background:'#fff', cursor:'pointer', boxShadow:'0 1px 4px rgba(0,0,0,0.06)' },
   grid: { display:'grid', gridTemplateColumns:'1fr 480px', gap:20 },
-  card: { background:'#faf7ff', padding:16, borderRadius:12, border:'1px solid #eee' },
+  card: { background:'#f4eefb', padding:16, borderRadius:12, border:'1px solid #eee' },
   sectionTitle: { fontSize:16, fontWeight:600, marginBottom:12 },
   formRow: { display:'flex', flexDirection:'column', marginBottom:10 },
   label: { fontSize:13, color:'#374151', marginBottom:6 },

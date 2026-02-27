@@ -126,7 +126,7 @@ const styles = {
   page: { display: "flex", flexDirection: "column", gap: 12 },
   sub: { margin: 0, color: "#6b7280", fontSize: 13 },
   grid: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 },
-  card: { border: "1px solid #decff1", background: "#faf7ff", borderRadius: 12, padding: 12 },
+  card: { border: "1px solid #decff1", background: "#f4eefb", borderRadius: 12, padding: 12 },
   title: { margin: "0 0 8px 0", color: "#4b316c" },
   row: { display: "grid", gap: 8 },
   textarea: { minHeight: 88, border: "1px solid #d7c5ef", borderRadius: 8, padding: 10, resize: "vertical" },

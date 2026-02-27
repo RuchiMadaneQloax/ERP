@@ -8,6 +8,8 @@ function Attendance({ token }) {
 
   // fallback to localStorage token if parent didn't pass it
   const effectiveToken = token ?? localStorage.getItem("token");
+  const apiRoot = (import.meta.env.VITE_API_URL || "http://localhost:5000").replace(/\/+$/, "");
+  const baseUrl = apiRoot.endsWith("/api") ? apiRoot : `${apiRoot}/api`;
 
   const [employees, setEmployees] = useState([]);
   const [selectedEmployee, setSelectedEmployee] = useState("");
@@ -45,7 +47,7 @@ function Attendance({ token }) {
 
     try {
       const response = await fetch(
-        `http://localhost:5000/api/attendance?employee=${employeeId}`,
+        `${baseUrl}/attendance?employee=${employeeId}`,
         {
           headers: {
             Authorization: `Bearer ${effectiveToken}`,
@@ -83,7 +85,7 @@ function Attendance({ token }) {
 
     try {
       const response = await fetch(
-        "http://localhost:5000/api/attendance",
+        `${baseUrl}/attendance`,
         {
           method: "POST",
           headers: {
@@ -212,7 +214,7 @@ export default Attendance;
 
 const styles = {
   container: {
-    backgroundColor: '#efe9f6',
+    backgroundColor: '#e1d7ee',
     minHeight: '100vh',
     padding: 28,
     boxSizing: 'border-box'
@@ -222,7 +224,7 @@ const styles = {
   pageSubtitle: { color:'#6b7280', marginTop:6 },
   backButton: { padding:'8px 12px', borderRadius:8, border:'none', background:'#fff', cursor:'pointer', boxShadow:'0 1px 4px rgba(0,0,0,0.06)' },
   grid: { display:'grid', gridTemplateColumns:'1fr 480px', gap:20 },
-  card: { background:'#faf7ff', padding:16, borderRadius:12, border:'1px solid #eee' },
+  card: { background:'#f4eefb', padding:16, borderRadius:12, border:'1px solid #eee' },
   sectionTitle: { fontSize:16, fontWeight:600, marginBottom:12 },
   formRow: { display:'flex', flexDirection:'column', marginBottom:10 },
   label: { fontSize:13, color:'#374151', marginBottom:6 },
