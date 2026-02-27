@@ -12,7 +12,7 @@ export default function MyAttendance() {
   const [rows, setRows] = useState([]);
   const [leaves, setLeaves] = useState([]);
   const [showMarkedMessage, setShowMarkedMessage] = useState(false);
-  const [attendanceMarkedToday, setAttendanceMarkedToday] = useState(false);
+  const [todayAttendance, setTodayAttendance] = useState(null);
 
   const toIstDateKey = (value) => {
     const d = new Date(value);
@@ -39,7 +39,7 @@ export default function MyAttendance() {
       setRows(list);
       setLeaves(Array.isArray(leaveData) ? leaveData : []);
       const todayKey = toIstDateKey(new Date());
-      setAttendanceMarkedToday(list.some((r) => toIstDateKey(r?.date) === todayKey));
+      setTodayAttendance(list.find((r) => toIstDateKey(r?.date) === todayKey) || null);
     };
     if (effectiveToken) load();
   },[effectiveToken]);
@@ -47,8 +47,11 @@ export default function MyAttendance() {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const fromRedirect = params.get('marked') === '1';
-    setShowMarkedMessage(fromRedirect || attendanceMarkedToday);
-  }, [location.search, attendanceMarkedToday]);
+    setShowMarkedMessage(fromRedirect || Boolean(todayAttendance?.checkInTime));
+  }, [location.search, todayAttendance]);
+
+  const isCheckedOutToday = Boolean(todayAttendance?.checkOutTime);
+  const buttonLabel = isCheckedOutToday ? "Day Completed" : "Mark Check-In / Check-Out";
 
   return (
     <div style={styles.section}>
@@ -63,13 +66,13 @@ export default function MyAttendance() {
           type="button"
           style={{
             ...styles.markButton,
-            ...(attendanceMarkedToday ? styles.markButtonDisabled : {}),
+            ...(isCheckedOutToday ? styles.markButtonDisabled : {}),
           }}
           onClick={() => navigate('/employee/profile')}
-          disabled={attendanceMarkedToday}
-          title={attendanceMarkedToday ? 'Attendance already marked for today' : 'Go to profile to mark attendance'}
+          disabled={isCheckedOutToday}
+          title={isCheckedOutToday ? 'Check-out already marked for today' : 'Go to profile to mark check-in/check-out'}
         >
-          Mark Attendance
+          {buttonLabel}
         </button>
       </div>
       {rows.length === 0 && leaves.length === 0 ? (

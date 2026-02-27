@@ -86,7 +86,7 @@ export default function EmployeeProfile() {
     setActionMessage("");
   };
 
-  const handleMarkAttendance = async () => {
+  const handleFacePunch = async (action) => {
     setActionMessage("");
     const imageSrc = webcamRef.current?.getScreenshot?.();
     if (!imageSrc) {
@@ -96,7 +96,7 @@ export default function EmployeeProfile() {
 
     try {
       setProcessingAttendance(true);
-      const res = await markAttendanceByFace(imageSrc, effectiveToken);
+      const res = await markAttendanceByFace(imageSrc, effectiveToken, action);
       const confidence = typeof res?.confidence === "number" ? ` (confidence: ${res.confidence})` : "";
       setActionMessage(`${res?.message || "Attendance marked"}${confidence}`);
       setTimeout(() => navigate("/employee/attendance?marked=1"), 600);
@@ -172,7 +172,7 @@ export default function EmployeeProfile() {
         <h3 style={styles.cardTitle}>Biometric Face Registration</h3>
         <p style={styles.helperText}>
           {faceMode === "mark"
-            ? "Face is registered. Capture your photo to mark daily attendance."
+            ? "Mark check-in at 10:00 AM and check-out at 6:00 PM to track daily working hours."
             : "Capture 3 clear front-facing photos to register biometric attendance."}
         </p>
         <div style={styles.faceGrid}>
@@ -192,10 +192,18 @@ export default function EmployeeProfile() {
                 <button
                   type="button"
                   style={styles.enrollButton}
-                  onClick={handleMarkAttendance}
+                  onClick={() => handleFacePunch("checkin")}
                   disabled={processingAttendance}
                 >
-                  {processingAttendance ? "Marking..." : "Mark Attendance"}
+                  {processingAttendance ? "Marking..." : "Mark Check-In (10:00 AM)"}
+                </button>
+                <button
+                  type="button"
+                  style={styles.secondaryButton}
+                  onClick={() => handleFacePunch("checkout")}
+                  disabled={processingAttendance}
+                >
+                  {processingAttendance ? "Marking..." : "Mark Check-Out (6:00 PM)"}
                 </button>
                 <button
                   type="button"

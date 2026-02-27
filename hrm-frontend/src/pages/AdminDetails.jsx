@@ -196,12 +196,12 @@ export default function AdminDetails({ token }) {
 }
 
 const styles = {
-  page: { padding: 24, display: "flex", flexDirection: "column", gap: 16, background: "#ede9e3", minHeight: "100vh" },
+  page: { padding: 24, display: "flex", flexDirection: "column", gap: 16, background: "#efe9f6", minHeight: "100vh" },
   header: { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 },
   title: { margin: 0, fontSize: 24, fontWeight: 700 },
   subtitle: { margin: "6px 0 0 0", color: "#6b7280" },
   grid: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 },
-  card: { background: "#f7f6f3", border: "1px solid #ececec", borderRadius: 12, padding: 14 },
+  card: { background: "#faf7ff", border: "1px solid #ececec", borderRadius: 12, padding: 14 },
   cardTitle: { marginTop: 0, marginBottom: 10, fontSize: 16 },
   form: { display: "grid", gap: 10 },
   input: { padding: "10px 12px", borderRadius: 8, border: "1px solid #d4d4d4" },
@@ -210,7 +210,8 @@ const styles = {
   permissionGroupTitle: { fontSize: 13, fontWeight: 700, color: "#111827", marginBottom: 6 },
   permissionsGrid: { display: "grid", gridTemplateColumns: "1fr", gap: 8 },
   permissionItem: { display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "#374151" },
-  btnPrimary: { padding: "10px 14px", borderRadius: 8, border: "none", background: "#355e3b", color: "#fff", cursor: "pointer" },
+  btnPrimary: { padding: "10px 14px", borderRadius: 8, border: "1px solid #d9c8f6", background: "#f3ecff", color: "#3f2a5f", cursor: "pointer" },
   btnSecondary: { padding: "8px 12px", borderRadius: 8, border: "1px solid #d1d5db", background: "#fff", cursor: "pointer" },
   btnDanger: { padding: "8px 12px", borderRadius: 8, border: "none", background: "#c0392b", color: "#fff", cursor: "pointer" },
 };
+

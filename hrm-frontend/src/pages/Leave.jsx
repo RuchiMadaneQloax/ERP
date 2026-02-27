@@ -174,7 +174,7 @@ export default Leave;
 
 const styles = {
   container: {
-    backgroundColor: "#EDE9E3",
+    backgroundColor: "#efe9f6",
     minHeight: "100vh",
     padding: 28,
     boxSizing: "border-box",
@@ -196,7 +196,7 @@ const styles = {
     boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
   },
   grid: { display: "grid", gridTemplateColumns: "360px 1fr", gap: 20 },
-  card: { background: "#F7F6F3", padding: 16, borderRadius: 12, border: "1px solid #eee" },
+  card: { background: "#faf7ff", padding: 16, borderRadius: 12, border: "1px solid #eee" },
   sectionTitle: { fontSize: 16, fontWeight: 600, marginBottom: 12 },
   noteText: { color: "#6b7280", margin: 0 },
   table: { width: "100%", borderCollapse: "collapse" },
@@ -219,3 +219,4 @@ const styles = {
     cursor: "pointer",
   },
 };
+

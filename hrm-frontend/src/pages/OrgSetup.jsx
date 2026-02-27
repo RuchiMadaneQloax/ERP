@@ -262,7 +262,7 @@ export default function OrgSetup() {
 
 const styles = {
   page: {
-    background: "#ede9e3",
+    background: "#efe9f6",
     minHeight: "100vh",
     padding: 24,
     display: "flex",
@@ -273,7 +273,7 @@ const styles = {
   subtitle: { margin: 0, color: "#6b7280" },
   grid: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 },
   card: {
-    background: "#f7f6f3",
+    background: "#faf7ff",
     border: "1px solid #ececec",
     borderRadius: 12,
     padding: 14,
@@ -281,7 +281,7 @@ const styles = {
   sectionTitle: { marginTop: 0, marginBottom: 10, fontSize: 16 },
   form: { display: "grid", gap: 10 },
   input: { padding: "10px 12px", borderRadius: 8, border: "1px solid #d4d4d4" },
-  primaryButton: { padding: "10px 14px", borderRadius: 8, border: "none", background: "#355e3b", color: "#fff", cursor: "pointer" },
+  primaryButton: { padding: "10px 14px", borderRadius: 8, border: "1px solid #d9c8f6", background: "#f3ecff", color: "#3f2a5f", cursor: "pointer" },
   secondaryButton: { padding: "6px 10px", borderRadius: 8, border: "1px solid #d1d5db", background: "#fff", color: "#111827", cursor: "pointer" },
   list: { display: "flex", flexDirection: "column", gap: 8 },
   row: { background: "#fff", border: "1px solid #eee", borderRadius: 8, padding: 10, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 },
@@ -297,3 +297,4 @@ function decodeRoleFromToken(token) {
     return null;
   }
 }
+

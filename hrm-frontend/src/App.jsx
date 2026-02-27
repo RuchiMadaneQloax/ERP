@@ -13,8 +13,11 @@ import MyRecords from "./pages/employee/MyRecords";
 import MyLeaves from "./pages/employee/MyLeaves";
 import MyPayrolls from "./pages/employee/MyPayrolls";
 import MyAttendance from "./pages/employee/MyAttendance";
+import MyWorkHours from "./pages/employee/MyWorkHours";
 import ChangePassword from "./pages/employee/ChangePassword";
 import EmployeeProfile from "./pages/employee/EmployeeProfile";
+import WorkHours from "./pages/WorkHours";
+import SalaryManagement from "./pages/SalaryManagement";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { decodeToken } from "./services/api";
 import FaceAttendance from "./pages/FaceAttendance";
@@ -38,6 +41,9 @@ function AppRoutes() {
         }
       />
 
+      {/* PUBLIC KIOSK FACE ATTENDANCE URL (PHONE/TABLET) */}
+      <Route path="/kiosk-face" element={<FaceAttendance />} />
+
       {/* PROTECTED ROUTES */}
       <Route
         path="/"
@@ -53,12 +59,13 @@ function AppRoutes() {
       >
         <Route index element={<Dashboard />} />
         <Route path="attendance" element={<Attendance />} />
+        <Route path="work-hours" element={<WorkHours />} />
+        <Route path="salary-management" element={<SalaryManagement />} />
         <Route path="payroll" element={<Payroll />} />
         <Route path="leave" element={<Leave />} />
         <Route path="org-setup" element={effectiveRole === "superadmin" ? <OrgSetup /> : <Navigate to="/" replace />} />
         <Route path="employees/:id" element={<EmployeeDetails />} />
         <Route path="admins/:id" element={<AdminDetails />} />
-        <Route path="/face-attendance" element={<FaceAttendance />} />
       </Route>
 
         {/* EMPLOYEE SELF-SERVICE */}
@@ -91,6 +98,7 @@ function AppRoutes() {
           <Route path="leaves" element={<MyLeaves />} />
           <Route path="payslips" element={<MyPayrolls />} />
           <Route path="attendance" element={<MyAttendance />} />
+          <Route path="work-hours" element={<MyWorkHours />} />
           <Route path="password" element={<ChangePassword />} />
         </Route>
 

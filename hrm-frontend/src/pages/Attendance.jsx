@@ -212,7 +212,7 @@ export default Attendance;
 
 const styles = {
   container: {
-    backgroundColor: '#EDE9E3',
+    backgroundColor: '#efe9f6',
     minHeight: '100vh',
     padding: 28,
     boxSizing: 'border-box'
@@ -222,14 +222,15 @@ const styles = {
   pageSubtitle: { color:'#6b7280', marginTop:6 },
   backButton: { padding:'8px 12px', borderRadius:8, border:'none', background:'#fff', cursor:'pointer', boxShadow:'0 1px 4px rgba(0,0,0,0.06)' },
   grid: { display:'grid', gridTemplateColumns:'1fr 480px', gap:20 },
-  card: { background:'#F7F6F3', padding:16, borderRadius:12, border:'1px solid #eee' },
+  card: { background:'#faf7ff', padding:16, borderRadius:12, border:'1px solid #eee' },
   sectionTitle: { fontSize:16, fontWeight:600, marginBottom:12 },
   formRow: { display:'flex', flexDirection:'column', marginBottom:10 },
   label: { fontSize:13, color:'#374151', marginBottom:6 },
   select: { padding:'10px 12px', borderRadius:8, border:'1px solid #ddd' },
   input: { padding:'10px 12px', borderRadius:8, border:'1px solid #ddd' },
-  primaryButton: { padding:'10px 14px', borderRadius:8, border:'none', background:'#355E3B', color:'#fff', cursor:'pointer' },
+  primaryButton: { padding:'10px 14px', borderRadius:8, border:'1px solid #d9c8f6', background:'#f3ecff', color:'#3f2a5f', cursor:'pointer' },
   table: { width:'100%', borderCollapse:'collapse' },
   th: { textAlign:'left', padding:8, borderBottom:'1px solid #eee', color:'#6b7280' },
   td: { padding:8, borderBottom:'1px solid #f3f3f3' }
 };
+

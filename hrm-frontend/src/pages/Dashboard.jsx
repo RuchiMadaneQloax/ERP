@@ -177,14 +177,27 @@ function Dashboard({ token }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const normalizedName = String(name || "").trim().replace(/\s+/g, " ");
+    const normalizedEmail = String(email || "").trim().toLowerCase();
+    const fullNameRegex = /^[A-Za-z][A-Za-z'\-.\s]*\s+[A-Za-z][A-Za-z'\-.\s]*$/;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!fullNameRegex.test(normalizedName)) {
+      alert("Enter full name (first and last name)");
+      return;
+    }
+    if (!emailRegex.test(normalizedEmail)) {
+      alert("Enter a valid email address");
+      return;
+    }
     if (!selectedDepartment || !selectedDesignation) {
       alert("Select department and designation");
       return;
     }
 
     const employeeData = {
-      name,
-      email,
+      name: normalizedName,
+      email: normalizedEmail,
       department: selectedDepartment,
       designation: selectedDesignation,
       salary: Number(salary),
@@ -352,15 +365,9 @@ function Dashboard({ token }) {
 
   const totalEmployees = employees.length;
   const activeEmployees = employees.filter((e) => e.status === "active").length;
-  const inactiveEmployees = totalEmployees - activeEmployees;
   const thisMonthPayrollTotal = payrolls
     .filter((p) => p.month === monthStart)
     .reduce((s, p) => s + (Number(p.finalSalary) || 0), 0);
-  const presentCount = attendanceMonth.filter((a) => a.status === "present").length;
-  const halfDayCount = attendanceMonth.filter((a) => a.status === "half-day").length;
-  const absentCount = attendanceMonth.filter((a) => a.status === "absent").length;
-  const denom = presentCount + halfDayCount + absentCount;
-  const attendancePercent = denom > 0 ? Math.round(((presentCount + 0.5 * halfDayCount) / denom) * 100) : 0;
   const todayISO = new Date().toISOString().slice(0, 10);
   const employeesOnLeave = new Set(
     attendanceMonth
@@ -391,7 +398,6 @@ function Dashboard({ token }) {
               <Search size={16} />
             </button>
           </div>
-          <button style={styles.profileButton}>JD</button>
         </div>
       </div>
 
@@ -463,8 +469,6 @@ function Dashboard({ token }) {
             <div style={styles.statCard}><div style={styles.statIcon}>A</div><div><div style={styles.statNumber}>{activeEmployees}</div><div style={styles.statLabel}>Active Employees</div></div></div>
             <div style={styles.statCard}><div style={styles.statIcon}>L</div><div><div style={styles.statNumber}>{employeesOnLeave}</div><div style={styles.statLabel}>On Leave (today)</div></div></div>
             <div style={styles.statCard}><div style={styles.statIcon}>P</div><div><div style={styles.statNumber}>{formatCurrency(thisMonthPayrollTotal)}</div><div style={styles.statLabel}>This Month Payroll</div></div></div>
-            <div style={styles.statCard}><div style={styles.statIcon}>I</div><div><div style={styles.statNumber}>{inactiveEmployees}</div><div style={styles.statLabel}>Inactive Employees</div></div></div>
-            <div style={styles.statCard}><div style={styles.statIcon}>%</div><div><div style={styles.statNumber}>{attendancePercent}%</div><div style={styles.statLabel}>Attendance (month)</div></div></div>
           </div>
 
           {isSuperadmin && (
@@ -527,8 +531,8 @@ function Dashboard({ token }) {
                         style={{
                           ...styles.employeeRow,
                           cursor: "pointer",
-                          borderColor: selectedAdminRowId === a._id ? "#355E3B" : "#eee",
-                          background: selectedAdminRowId === a._id ? "#f1f6f2" : "#fff",
+                          borderColor: selectedAdminRowId === a._id ? "#6f4a99" : "#eee",
+                          background: selectedAdminRowId === a._id ? "#f4edff" : "#fff",
                         }}
                         onClick={() => {
                           setSelectedAdminRowId(selectedAdminRowId === a._id ? null : a._id);
@@ -688,8 +692,8 @@ function Dashboard({ token }) {
                   style={{
                     ...styles.employeeRow,
                     cursor: "pointer",
-                    borderColor: selectedEmployeeRowId === emp._id ? "#355E3B" : "#eee",
-                    background: selectedEmployeeRowId === emp._id ? "#f1f6f2" : "#fff",
+                    borderColor: selectedEmployeeRowId === emp._id ? "#6f4a99" : "#eee",
+                    background: selectedEmployeeRowId === emp._id ? "#f4edff" : "#fff",
                   }}
                   onClick={() => setSelectedEmployeeRowId(selectedEmployeeRowId === emp._id ? null : emp._id)}
                   onDoubleClick={() => navigate(`/employees/${emp._id}`)}
@@ -732,7 +736,7 @@ export default Dashboard;
 
 const styles = {
   container: {
-    backgroundColor: "#EDE9E3",
+    backgroundColor: "#efe9f6",
     padding: "30px",
     minHeight: "100vh",
     display: "flex",
@@ -745,11 +749,11 @@ const styles = {
   headerActions: { display: "flex", gap: 12, alignItems: "center" },
   searchInput: { padding: "8px 12px", borderRadius: 8, border: "1px solid #ddd" },
   searchButton: {
-    background: "#355E3B",
-    border: "none",
+    background: "#f3ecff",
+    border: "1px solid #d9c8f6",
     padding: 8,
     borderRadius: 8,
-    color: "#fff",
+    color: "#3f2a5f",
     cursor: "pointer",
     display: "flex",
     alignItems: "center",
@@ -763,7 +767,7 @@ const styles = {
   statIcon: { fontSize: 16, backgroundColor: "#f3f4f6", padding: 8, borderRadius: 8, minWidth: 28, textAlign: "center" },
   statNumber: { fontSize: 20, fontWeight: 700 },
   statLabel: { fontSize: 12, color: "#6b7280" },
-  card: { backgroundColor: "#F7F6F3", padding: "20px", borderRadius: "14px", boxShadow: "0 2px 6px rgba(0,0,0,0.05)" },
+  card: { backgroundColor: "#faf7ff", padding: "20px", borderRadius: "14px", boxShadow: "0 2px 6px rgba(0,0,0,0.05)" },
   sectionTitle: { fontSize: "18px", fontWeight: "600", marginBottom: "15px" },
   subSectionTitle: { margin: "0 0 10px 0", fontSize: 15, fontWeight: 700, color: "#374151" },
   adminGrid: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 },
@@ -771,7 +775,7 @@ const styles = {
   sidebar: { background: "transparent" },
   formGridSidebar: { display: "grid", gap: 10 },
   input: { padding: "10px", borderRadius: "8px", border: "1px solid #ccc" },
-  primaryButton: { padding: "10px 16px", borderRadius: "8px", border: "none", backgroundColor: "#355E3B", color: "#fff", cursor: "pointer" },
+  primaryButton: { padding: "10px 16px", borderRadius: "8px", border: "1px solid #d9c8f6", backgroundColor: "#f3ecff", color: "#3f2a5f", cursor: "pointer" },
   cancelButton: { padding: "10px 16px", borderRadius: "8px", border: "none", backgroundColor: "#777", color: "#fff", cursor: "pointer" },
   editButton: { padding: "6px 10px", borderRadius: "6px", border: "none", backgroundColor: "#2980B9", color: "#fff", cursor: "pointer" },
   deleteButton: { padding: "6px 10px", borderRadius: "6px", border: "none", backgroundColor: "#C0392B", color: "#fff", cursor: "pointer" },
@@ -845,10 +849,11 @@ const styles = {
   },
   searchResultsCard: { background: "#fff", padding: 12, borderRadius: 10, border: "1px solid #eee", marginTop: 12 },
   searchResultRow: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: 8, borderRadius: 8, background: "#fbfbfb" },
-  viewButton: { padding: "6px 10px", borderRadius: 8, border: "none", backgroundColor: "#355E3B", color: "#fff", cursor: "pointer" },
+  viewButton: { padding: "6px 10px", borderRadius: 8, border: "1px solid #d9c8f6", backgroundColor: "#f3ecff", color: "#3f2a5f", cursor: "pointer" },
   clearSearchButton: { padding: "6px 10px", borderRadius: 8, border: "1px solid #ddd", background: "transparent", cursor: "pointer" },
   modalOverlay: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 50 },
   modalCard: { background: "#fff", padding: 20, borderRadius: 12, width: "90%", maxWidth: 700, boxShadow: "0 6px 24px rgba(0,0,0,0.15)" },
   modalRow: { display: "flex", justifyContent: "space-between", gap: 10, marginBottom: 8 },
   detailsLoading: { padding: 10, borderRadius: 8, border: "1px solid #e5e7eb", color: "#6b7280", background: "#f9fafb" },
 };
+

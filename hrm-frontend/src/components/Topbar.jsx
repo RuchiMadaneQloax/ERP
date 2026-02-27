@@ -15,14 +15,17 @@ export default function Topbar() {
   const navItems = [
     { to: "/", label: "Dashboard" },
     { to: "/attendance", label: "Attendance" },
+    { to: "/work-hours", label: "Work Hours" },
     { to: "/payroll", label: "Payroll" },
+    ...((effectiveRole === "superadmin" || effectiveRole === "hr")
+      ? [{ to: "/salary-management", label: "Salary Mgmt" }]
+      : []),
     { to: "/leave", label: "Leave" },
     ...(effectiveRole === "superadmin" ? [{ to: "/org-setup", label: "Org Setup" }] : []),
   ];
 
   return (
     <div style={styles.topbar}>
-
       <div style={styles.leftGroup}>
         {navItems.map((item) => {
           const active = location.pathname === item.to;
@@ -42,104 +45,85 @@ export default function Topbar() {
       </div>
 
       <div style={styles.rightGroup}>
-        <div style={{display:'flex',alignItems:'center',gap:8}}>
-          {role && <div style={{fontSize:13,color:'#374151',padding:'6px 8px',background:'#f3f4f6',borderRadius:8}}>{role.toUpperCase()}</div>}
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          {role && (
+            <div style={{ fontSize: 13, color: "#4c3569", padding: "6px 8px", background: "#f3f4f6", borderRadius: 8 }}>
+              {role.toUpperCase()}
+            </div>
+          )}
           <button style={styles.iconButton} title="Notifications">🔔</button>
-          <button style={styles.profileButton} title="Profile">{payload?.name ? payload.name.split(' ').map(n=>n[0]).slice(0,2).join('').toUpperCase() : 'JD'}</button>
+          <button style={styles.profileButton} title="Profile">
+            {payload?.name ? payload.name.split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase() : "JD"}
+          </button>
           <button style={styles.logoutButton} onClick={handleLogout}>Logout</button>
         </div>
       </div>
-
     </div>
   );
 }
 
-/* ===== STYLE OBJECT ===== */
-
 const styles = {
   topbar: {
-    height: "64px",
-    backgroundColor: "#ffffff",
-    borderBottom: "1px solid #e5e7eb",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: "0 24px",
-  },
-
-  title: {
-    fontSize: "18px",
-    fontWeight: "600",
-    color: "#1f2937",
-  },
-  topbar: {
     height: 52,
-    backgroundColor: "#ffffff",
-    borderBottom: "1px solid #e6e6e6",
+    backgroundColor: "#33204d",
+    borderBottom: "1px solid #2a183f",
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
     padding: "0 18px",
     gap: 12,
   },
-
   leftGroup: {
-    display: 'flex',
+    display: "flex",
     gap: 8,
-    alignItems: 'center'
+    alignItems: "center",
   },
-
   rightGroup: {
-    display: 'flex',
+    display: "flex",
     gap: 8,
-    alignItems: 'center'
+    alignItems: "center",
   },
-
   navButton: {
-    backgroundColor: 'transparent',
-    border: 'none',
-    padding: '8px 12px',
+    backgroundColor: "#f3ecff",
+    border: "1px solid #d9c8f6",
+    padding: "8px 12px",
     borderRadius: 8,
-    cursor: 'pointer',
-    color: '#374151',
+    cursor: "pointer",
+    color: "#3f2a5f",
     fontWeight: 600,
   },
-
   navButtonActive: {
-    backgroundColor: '#E6F1EA',
-    color: '#24492f'
+    backgroundColor: "#e4d5fb",
+    color: "#2f1f48",
   },
-
   logoutButton: {
-    backgroundColor: "#355E3B",
-    color: "#ffffff",
+    backgroundColor: "#f3ecff",
+    color: "#3f2a5f",
     padding: "6px 10px",
-    border: "none",
+    border: "1px solid #d9c8f6",
     borderRadius: "8px",
     fontSize: "13px",
     fontWeight: "600",
     cursor: "pointer",
   },
-
   iconButton: {
-    background: 'transparent',
-    border: 'none',
+    background: "transparent",
+    border: "none",
     fontSize: 16,
-    cursor: 'pointer'
+    cursor: "pointer",
   },
-
   profileButton: {
-    backgroundColor: '#f3f4f6',
-    border: 'none',
-    padding: '6px 10px',
+    backgroundColor: "#f3ecff",
+    border: "none",
+    padding: "6px 10px",
     borderRadius: 999,
-    cursor: 'pointer',
+    cursor: "pointer",
     minWidth: 36,
     height: 36,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
     fontWeight: 700,
-    color: '#24492f'
+    color: "#3f2a5f",
   },
 };

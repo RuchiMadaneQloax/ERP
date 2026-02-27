@@ -19,8 +19,12 @@ export const login = async (data) => {
 // =========================
 // EMPLOYEES
 // =========================
-export const getEmployees = async (token, search = "") => {
-  const url = `${BASE_URL}/employees${search ? `?search=${encodeURIComponent(search)}` : ""}`;
+export const getEmployees = async (token, search = "", limit = 10) => {
+  const q = new URLSearchParams();
+  if (search) q.set("search", search);
+  if (limit) q.set("limit", String(limit));
+  const qs = q.toString();
+  const url = `${BASE_URL}/employees${qs ? `?${qs}` : ""}`;
   const response = await fetch(url, {
     headers: {
       Authorization: `Bearer ${token}`,
@@ -241,6 +245,52 @@ export const getAttendanceByEmployee = async (token, employeeId, month = "") => 
 };
 
 // =========================
+// COMPENSATION
+// =========================
+export const getCompensationPolicy = async (token) => {
+  const response = await fetch(`${BASE_URL}/compensation/policy`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return response.json();
+};
+
+export const updateCompensationPolicy = async (body, token) => {
+  const response = await fetch(`${BASE_URL}/compensation/policy`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(body),
+  });
+  return response.json();
+};
+
+export const assignSalariesBulk = async (assignments, token) => {
+  const response = await fetch(`${BASE_URL}/compensation/assign`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ assignments }),
+  });
+  return response.json();
+};
+
+export const reviseSalariesBulk = async (body, token) => {
+  const response = await fetch(`${BASE_URL}/compensation/revise`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(body),
+  });
+  return response.json();
+};
+
+// =========================
 // PAYROLL
 // =========================
 export const getPayrolls = async (token) => {
@@ -388,14 +438,14 @@ export const enrollMyFace = async (images, token) => {
   return data;
 };
 
-export const markAttendanceByFace = async (image, token) => {
+export const markAttendanceByFace = async (image, token, action = "auto") => {
   const response = await fetch(`${BASE_URL}/attendance/face`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
-    body: JSON.stringify({ image }),
+    body: JSON.stringify({ image, action }),
   });
   const data = await response.json();
   if (!response.ok) {
