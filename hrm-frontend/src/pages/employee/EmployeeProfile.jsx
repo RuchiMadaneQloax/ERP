@@ -180,6 +180,7 @@ export default function EmployeeProfile() {
             <Webcam
               ref={webcamRef}
               screenshotFormat="image/jpeg"
+              screenshotQuality={0.7}
               width={360}
               height={260}
               videoConstraints={{ facingMode: "user" }}

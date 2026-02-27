@@ -28,6 +28,7 @@ MONGO_URI = os.environ.get("MONGO_URI")
 DB_NAME = os.environ.get("DB_NAME", "hrm")
 MATCH_THRESHOLD = float(os.environ.get("FACE_MATCH_THRESHOLD", "0.5"))
 TOP2_GAP_THRESHOLD = float(os.environ.get("FACE_TOP2_GAP_THRESHOLD", "0.03"))
+DETECTOR_BACKEND = os.environ.get("FACE_DETECTOR_BACKEND", "opencv")
 
 if not MONGO_URI:
     raise ValueError("MONGO_URI environment variable not set")
@@ -57,6 +58,9 @@ def decode_image(image_base64: str):
     try:
         image_data = base64.b64decode(image_base64.split(",")[-1])
         image = Image.open(io.BytesIO(image_data)).convert("RGB")
+        resample = Image.Resampling.LANCZOS if hasattr(Image, "Resampling") else Image.LANCZOS
+        # Cap very large images to keep enrollment/recognition latency low on hosted CPU.
+        image.thumbnail((960, 960), resample)
         return np.array(image)
     except Exception as exc:
         print("Image decode error:", exc)
@@ -69,26 +73,19 @@ def extract_embedding(image_base64: str):
         if image_array is None:
             return None, "Invalid image data"
 
-        # Enforce single-face rule to avoid mismatches with group frames.
-        faces = DeepFace.extract_faces(
-            img_path=image_array,
-            detector_backend="retinaface",
-            enforce_detection=True,
-        )
-        if len(faces) != 1:
-            return None, "Exactly one face must be visible in the frame"
-
-        embedding = DeepFace.represent(
+        representations = DeepFace.represent(
             img_path=image_array,
             model_name="ArcFace",
-            detector_backend="retinaface",
+            detector_backend=DETECTOR_BACKEND,
             enforce_detection=True,
         )
 
-        if not embedding:
+        if not representations:
             return None, "Face embedding could not be generated"
+        if len(representations) != 1:
+            return None, "Exactly one face must be visible in the frame"
 
-        return np.array(embedding[0]["embedding"], dtype=np.float32), None
+        return np.array(representations[0]["embedding"], dtype=np.float32), None
     except Exception as exc:
         print("Embedding error:", exc)
         return None, "Exactly one clear face is required"
