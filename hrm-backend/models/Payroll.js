@@ -23,6 +23,18 @@ const payrollSchema = new mongoose.Schema(
     overtimeRate: { type: Number, default: 0 }, // per hour
     overtimePay: { type: Number, default: 0 },
     holidayPay: { type: Number, default: 0 },
+    grossSalary: { type: Number, default: 0 },
+    taxRatePercent: { type: Number, default: 0 },
+    taxAmount: { type: Number, default: 0 },
+    massDeductions: [
+      {
+        label: String,
+        type: { type: String, enum: ["percent", "fixed"] },
+        value: Number,
+        amount: Number,
+      },
+    ],
+    totalDeductions: { type: Number, default: 0 },
     adjustments: [
       {
         label: String,

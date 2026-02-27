@@ -4,6 +4,16 @@ const Designation = require("../models/Designation");
 const bcrypt = require("bcryptjs");
 
 const DEFAULT_EMPLOYEE_PASSWORD = "ChangeMe123";
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const FULL_NAME_REGEX = /^[A-Za-z][A-Za-z'\-.\s]*\s+[A-Za-z][A-Za-z'\-.\s]*$/;
+
+function normalizeName(value = "") {
+  return String(value).trim().replace(/\s+/g, " ");
+}
+
+function normalizeEmail(value = "") {
+  return String(value).trim().toLowerCase();
+}
 
 // =======================================
 // CREATE EMPLOYEE
@@ -11,6 +21,16 @@ const DEFAULT_EMPLOYEE_PASSWORD = "ChangeMe123";
 exports.createEmployee = async (req, res) => {
   try {
     const { name, email, department, designation, salary } = req.body;
+    const normalizedName = normalizeName(name);
+    const normalizedEmail = normalizeEmail(email);
+
+    if (!FULL_NAME_REGEX.test(normalizedName)) {
+      return res.status(400).json({ message: "Name must include first and last name" });
+    }
+
+    if (!EMAIL_REGEX.test(normalizedEmail)) {
+      return res.status(400).json({ message: "Invalid email format" });
+    }
 
     // Validate department exists
     const deptExists = await Department.findById(department);
@@ -31,8 +51,8 @@ exports.createEmployee = async (req, res) => {
 
     const employee = await Employee.create({
       employeeId,
-      name,
-      email,
+      name: normalizedName,
+      email: normalizedEmail,
       password: hashedDefaultPassword,
       department,
       designation,
@@ -121,7 +141,24 @@ exports.getEmployeeById = async (req, res) => {
 // =======================================
 exports.updateEmployee = async (req, res) => {
   try {
-    const { department, designation } = req.body;
+    const { department, designation, name, email } = req.body;
+    const updatePayload = { ...req.body };
+
+    if (name !== undefined) {
+      const normalizedName = normalizeName(name);
+      if (!FULL_NAME_REGEX.test(normalizedName)) {
+        return res.status(400).json({ message: "Name must include first and last name" });
+      }
+      updatePayload.name = normalizedName;
+    }
+
+    if (email !== undefined) {
+      const normalizedEmail = normalizeEmail(email);
+      if (!EMAIL_REGEX.test(normalizedEmail)) {
+        return res.status(400).json({ message: "Invalid email format" });
+      }
+      updatePayload.email = normalizedEmail;
+    }
 
     // Validate department if updated
     if (department) {
@@ -141,7 +178,7 @@ exports.updateEmployee = async (req, res) => {
 
     const employee = await Employee.findByIdAndUpdate(
       req.params.id,
-      req.body,
+      updatePayload,
       { new: true }
     )
       .populate("department", "name")

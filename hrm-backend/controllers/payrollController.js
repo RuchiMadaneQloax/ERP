@@ -3,13 +3,22 @@ const Employee = require("../models/Employee");
 const Attendance = require("../models/Attendance");
 const Audit = require('../models/Audit');
 const { resolveEmployeeScopeMatchValues } = require('../utils/resolveEmployeeScope');
+const CompensationPolicy = require("../models/CompensationPolicy");
 
 // =======================================
 // GENERATE PAYROLL
 // =======================================
 exports.generatePayroll = async (req, res) => {
   try {
-    const { employee, month, overtimeHours = 0, overtimeRate = null, holidayPay = 0, adjustments = [], baseSalary: overrideBaseSalary } = req.body;
+    const {
+      employee,
+      month,
+      overtimeHours = 0,
+      overtimeRate = null,
+      holidayPay = 0,
+      adjustments = [],
+      baseSalary: overrideBaseSalary,
+    } = req.body;
 
     if (!employee || !month) {
       return res.status(400).json({
@@ -57,17 +66,22 @@ exports.generatePayroll = async (req, res) => {
 
     const dailyRate = baseSalary / totalDays;
 
+    // Overtime tracked in attendance is included by default.
+    const trackedOvertimeHours = records.reduce((sum, r) => sum + (Number(r.overtimeHours) || 0), 0);
+    const additionalOvertimeHours = Number(overtimeHours || 0);
+    const effectiveOvertimeHours = Math.max(0, trackedOvertimeHours + additionalOvertimeHours);
+
     // compute overtime pay
     const computedHourly = baseSalary / totalDays / 8; // assume 8 hours/day
     const usedOvertimeRate = overtimeRate && Number(overtimeRate) > 0 ? Number(overtimeRate) : computedHourly * 1.5;
-    const overtimePay = Number(overtimeHours || 0) * usedOvertimeRate;
+    const overtimePay = effectiveOvertimeHours * usedOvertimeRate;
 
     // adjustments array: [{label, amount}, ...]
     const adjustmentsTotal = Array.isArray(adjustments)
       ? adjustments.reduce((s, a) => s + (Number(a.amount) || 0), 0)
       : 0;
 
-    const finalSalary = Math.round(
+    const grossSalary = Math.round(
       baseSalary -
         absent * dailyRate -
         halfDay * (dailyRate / 2) +
@@ -75,6 +89,29 @@ exports.generatePayroll = async (req, res) => {
         (Number(holidayPay) || 0) +
         adjustmentsTotal
     );
+
+    const policy = await CompensationPolicy.findOne({ key: "global" });
+    const taxRatePercent = Math.max(0, Number(policy?.taxRatePercent || 0));
+    const taxAmount = Math.round((grossSalary * taxRatePercent) / 100);
+    const massDeductions = Array.isArray(policy?.deductions)
+      ? policy.deductions.map((d) => {
+          const safeValue = Math.max(0, Number(d?.value || 0));
+          const amount =
+            d?.type === "fixed"
+              ? safeValue
+              : Math.round((grossSalary * safeValue) / 100);
+          return {
+            label: d?.label || "Deduction",
+            type: d?.type === "fixed" ? "fixed" : "percent",
+            value: safeValue,
+            amount,
+          };
+        })
+      : [];
+
+    const totalMassDeductions = massDeductions.reduce((s, d) => s + (Number(d.amount) || 0), 0);
+    const totalDeductions = taxAmount + totalMassDeductions;
+    const finalSalary = Math.round(grossSalary - totalDeductions);
 
     const payroll = await Payroll.create({
       employee,
@@ -84,10 +121,15 @@ exports.generatePayroll = async (req, res) => {
       presentDays: present,
       absentDays: absent,
       halfDays: halfDay,
-      overtimeHours: Number(overtimeHours || 0),
+      overtimeHours: Number(effectiveOvertimeHours || 0),
       overtimeRate: Number(usedOvertimeRate || 0),
       overtimePay: Math.round(overtimePay || 0),
       holidayPay: Number(holidayPay || 0),
+      grossSalary: Number(grossSalary || 0),
+      taxRatePercent,
+      taxAmount,
+      massDeductions,
+      totalDeductions,
       adjustments: Array.isArray(adjustments) ? adjustments : [],
       finalSalary: finalSalary,
       generatedBy: req.admin.id,
@@ -106,8 +148,15 @@ exports.generatePayroll = async (req, res) => {
           payrollId: payroll._id,
           employee: employee,
           month,
-          overtimeHours: Number(overtimeHours || 0),
+          trackedOvertimeHours: Number(trackedOvertimeHours || 0),
+          additionalOvertimeHours: Number(additionalOvertimeHours || 0),
+          overtimeHours: Number(effectiveOvertimeHours || 0),
           overtimePay: Math.round(overtimePay || 0),
+          grossSalary: Number(grossSalary || 0),
+          taxRatePercent,
+          taxAmount,
+          totalMassDeductions,
+          totalDeductions,
           holidayPay: Number(holidayPay || 0),
           adjustments: Array.isArray(adjustments) ? adjustments : [],
         },

@@ -17,6 +17,39 @@ function getISTDateStart(now = new Date()) {
   return new Date(`${year}-${month}-${day}T00:00:00+05:30`);
 }
 
+function getISTDateTime(now = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Kolkata",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  }).formatToParts(now);
+
+  const year = parts.find((p) => p.type === "year")?.value;
+  const month = parts.find((p) => p.type === "month")?.value;
+  const day = parts.find((p) => p.type === "day")?.value;
+  const hour = parts.find((p) => p.type === "hour")?.value;
+  const minute = parts.find((p) => p.type === "minute")?.value;
+  const second = parts.find((p) => p.type === "second")?.value;
+  return new Date(`${year}-${month}-${day}T${hour}:${minute}:${second}+05:30`);
+}
+
+function getISTMinutesOfDay(now = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Kolkata",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).formatToParts(now);
+  const hour = Number(parts.find((p) => p.type === "hour")?.value || 0);
+  const minute = Number(parts.find((p) => p.type === "minute")?.value || 0);
+  return hour * 60 + minute;
+}
+
 function getISTMonthRange(monthInput) {
   const raw = String(monthInput || "");
   const [yearPart, monthPart] = raw.split("-").map((v) => Number(v));
@@ -118,6 +151,19 @@ async function backfillMissingAttendance({ employeeIds = [], range, markedBy = n
   }
 }
 
+function attachWorkingHours(rows = []) {
+  return rows.map((row) => {
+    const obj = typeof row?.toObject === "function" ? row.toObject() : row;
+    const checkIn = obj?.checkInTime ? new Date(obj.checkInTime) : null;
+    const checkOut = obj?.checkOutTime ? new Date(obj.checkOutTime) : null;
+    if (!checkIn || !checkOut || Number.isNaN(checkIn.getTime()) || Number.isNaN(checkOut.getTime())) {
+      return { ...obj, workingMinutes: null, workingHours: null };
+    }
+    const mins = Math.max(0, Math.round((checkOut.getTime() - checkIn.getTime()) / 60000));
+    return { ...obj, workingMinutes: mins, workingHours: Number((mins / 60).toFixed(2)) };
+  });
+}
+
 exports.markAttendance = async (req, res) => {
   try {
     const { employee, date, status, overtimeHours = 0, isHoliday = false } = req.body;
@@ -153,8 +199,12 @@ exports.markAttendance = async (req, res) => {
 
 exports.markAttendanceByFace = async (req, res) => {
   try {
-    const { image } = req.body;
+    const { image, action = "auto" } = req.body;
     if (!image) return res.status(400).json({ message: "Image is required" });
+    const requestedAction = String(action || "auto").toLowerCase();
+    if (!["auto", "checkin", "checkout"].includes(requestedAction)) {
+      return res.status(400).json({ message: "Invalid action. Use auto, checkin or checkout." });
+    }
 
     const response = await axios.post("http://localhost:8000/recognize", { image });
     const { employeeId, confidence, validationError } = response.data;
@@ -173,26 +223,75 @@ exports.markAttendanceByFace = async (req, res) => {
     }
 
     const today = getISTDateStart();
+    const nowIst = getISTDateTime();
+    const minutesNow = getISTMinutesOfDay();
+    const CHECK_IN_MIN = 10 * 60;
+    const CHECK_OUT_MIN = 18 * 60;
 
-    const attendance = await Attendance.create({
-      employee: employeeId,
-      date: today,
-      status: "present",
-      overtimeHours: 0,
-      isHoliday: false,
-      markedBy: "698ee1729468ca080b94f126",
-      method: "face",
-      checkInTime: new Date(),
-    });
+    let attendance = await Attendance.findOne({ employee: employeeId, date: today });
+    const resolvedAction =
+      requestedAction === "auto"
+        ? !attendance?.checkInTime
+          ? "checkin"
+          : "checkout"
+        : requestedAction;
+
+    if (resolvedAction === "checkin") {
+      if (minutesNow < CHECK_IN_MIN) {
+        return res.status(400).json({ message: "Check-in opens at 10:00 AM (IST)." });
+      }
+      if (attendance?.checkInTime) {
+        return res.status(400).json({ message: "Check-in already marked for today." });
+      }
+      if (attendance) {
+        attendance.status = "present";
+        attendance.isHoliday = false;
+        attendance.method = "face";
+        attendance.overtimeHours = 0;
+        attendance.checkInTime = nowIst;
+        if (!attendance.markedBy && req.admin?.id) attendance.markedBy = req.admin.id;
+        await attendance.save();
+      } else {
+        attendance = await Attendance.create({
+          employee: employeeId,
+          date: today,
+          status: "present",
+          overtimeHours: 0,
+          isHoliday: false,
+          markedBy: req.admin?.id || null,
+          method: "face",
+          checkInTime: nowIst,
+        });
+      }
+    } else {
+      if (minutesNow < CHECK_OUT_MIN) {
+        return res.status(400).json({ message: "Check-out opens at 6:00 PM (IST)." });
+      }
+      if (!attendance?.checkInTime) {
+        return res.status(400).json({ message: "Check-in not found for today. Please check in first." });
+      }
+      if (attendance.checkOutTime) {
+        return res.status(400).json({ message: "Check-out already marked for today." });
+      }
+      attendance.checkOutTime = nowIst;
+      attendance.method = "face";
+      await attendance.save();
+    }
 
     const populated = await Attendance.findById(attendance._id)
       .populate("employee", "name employeeId")
       .populate("markedBy", "name email");
+    const withWorkHours = attachWorkingHours([populated])[0];
+    const actionMessage =
+      resolvedAction === "checkin"
+        ? "Check-in marked. Working hours started."
+        : "Check-out marked. Working hours ended.";
 
     res.status(201).json({
-      message: "Attendance marked via face recognition",
+      message: actionMessage,
+      action: resolvedAction,
       confidence,
-      attendance: populated,
+      attendance: withWorkHours,
     });
   } catch (error) {
     if (error.code === 11000) {
@@ -238,7 +337,7 @@ exports.getAttendance = async (req, res) => {
       .populate("employee", "name employeeId")
       .populate("markedBy", "name email");
 
-    res.json(attendance);
+    res.json(attachWorkingHours(attendance));
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -305,7 +404,7 @@ exports.getMyAttendance = async (req, res) => {
       .populate("markedBy", "name email")
       .sort({ date: -1 });
 
-    res.json(attendance);
+    res.json(attachWorkingHours(attendance));
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
