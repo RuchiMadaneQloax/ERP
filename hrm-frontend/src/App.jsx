@@ -16,6 +16,7 @@ import MyAttendance from "./pages/employee/MyAttendance";
 import MyWorkHours from "./pages/employee/MyWorkHours";
 import ChangePassword from "./pages/employee/ChangePassword";
 import EmployeeProfile from "./pages/employee/EmployeeProfile";
+import FeedbackAssistant from "./pages/employee/FeedbackAssistant";
 import WorkHours from "./pages/WorkHours";
 import SalaryManagement from "./pages/SalaryManagement";
 import { AuthProvider, useAuth } from "./context/AuthContext";
@@ -99,6 +100,7 @@ function AppRoutes() {
           <Route path="payslips" element={<MyPayrolls />} />
           <Route path="attendance" element={<MyAttendance />} />
           <Route path="work-hours" element={<MyWorkHours />} />
+          <Route path="feedback" element={<FeedbackAssistant />} />
           <Route path="password" element={<ChangePassword />} />
         </Route>
 

@@ -484,3 +484,39 @@ export const getMyAttendance = async (token, month = '') => {
   const response = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
   return response.json();
 };
+
+export const chatMyFeedback = async (message, token) => {
+  const url = `${BASE_URL.replace('/api', '/api/employee')}/feedback/chat`;
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ message }),
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data?.message || "Could not send message");
+  return data;
+};
+
+export const submitMyReview = async (review, rating, token) => {
+  const url = `${BASE_URL.replace('/api', '/api/employee')}/feedback/review`;
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ review, rating }),
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data?.message || "Could not submit review");
+  return data;
+};
+
+export const getMyFeedbackHistory = async (token) => {
+  const url = `${BASE_URL.replace('/api', '/api/employee')}/feedback/history`;
+  const response = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+  return response.json();
+};

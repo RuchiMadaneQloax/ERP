@@ -22,6 +22,17 @@ import {
 import formatCurrency from "../utils/formatCurrency";
 import AttendanceCalendar from "../components/AttendanceCalendar";
 
+function toMonthKey(value) {
+  if (!value) return "";
+  const raw = String(value).trim();
+  const direct = raw.match(/^(\d{4})-(\d{2})/);
+  if (direct) return `${direct[1]}-${direct[2]}`;
+
+  const d = new Date(raw);
+  if (Number.isNaN(d.getTime())) return "";
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
+
 const PERMISSION_GROUPS = [
   {
     heading: "Leaves",
@@ -59,7 +70,8 @@ function Dashboard({ token }) {
   const decoded = decodeToken(effectiveToken);
 
   const current = new Date();
-  const monthStart = `${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, "0")}-01`;
+  const currentMonthKey = `${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, "0")}`;
+  const monthStart = `${currentMonthKey}-01`;
 
   const [employees, setEmployees] = useState([]);
   const [attendanceMonth, setAttendanceMonth] = useState([]);
@@ -366,7 +378,7 @@ function Dashboard({ token }) {
   const totalEmployees = employees.length;
   const activeEmployees = employees.filter((e) => e.status === "active").length;
   const thisMonthPayrollTotal = payrolls
-    .filter((p) => p.month === monthStart)
+    .filter((p) => toMonthKey(p?.month) === currentMonthKey)
     .reduce((s, p) => s + (Number(p.finalSalary) || 0), 0);
   const todayISO = new Date().toISOString().slice(0, 10);
   const employeesOnLeave = new Set(

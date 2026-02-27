@@ -65,6 +65,9 @@ export default function EmployeePortal() {
         <NavLink to="/employee/work-hours" style={({ isActive }) => ({ ...styles.navButton, ...(isActive ? styles.navButtonActive : {}) })}>
           Work Hours
         </NavLink>
+        <NavLink to="/employee/feedback" style={({ isActive }) => ({ ...styles.navButton, ...(isActive ? styles.navButtonActive : {}) })}>
+          AI Feedback
+        </NavLink>
         <NavLink to="/employee/password" style={({ isActive }) => ({ ...styles.navButton, ...(isActive ? styles.navButtonActive : {}) })}>
           Change Password
         </NavLink>
