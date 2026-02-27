@@ -3,7 +3,7 @@ import { Outlet } from "react-router-dom";
 
 export default function Layout() {
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex min-h-screen w-full bg-gray-50">
 
       {/* Main Section (full width) */}
       <div className="flex flex-col flex-1">
@@ -12,7 +12,7 @@ export default function Layout() {
   <Topbar />
 
         {/* Page Content */}
-        <main className="p-6 overflow-y-auto">
+        <main className="overflow-y-auto">
           <Outlet />
         </main>
 

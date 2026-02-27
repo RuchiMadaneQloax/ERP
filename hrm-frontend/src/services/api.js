@@ -330,7 +330,7 @@ export const getLeaveTypes = async (token) => {
 };
 
 export const applyLeave = async (data, token) => {
-  const response = await fetch(`${BASE_URL}/leaves/apply`, {
+  const response = await fetch(`${BASE_URL.replace('/api', '/api/employee')}/leaves/apply`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

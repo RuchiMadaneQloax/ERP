@@ -130,10 +130,16 @@ exports.updateLeaveStatus = async (req, res) => {
         message: "Leave request not found",
       });
     }
+    if (leave.status !== "pending") {
+      return res.status(400).json({
+        message: `Leave already ${leave.status}. Finalized requests cannot be changed.`,
+      });
+    }
 
     const prevStatus = leave.status;
     leave.status = status;
     leave.reviewedBy = req.admin.id;
+    leave.reviewedAt = new Date();
 
     await leave.save();
 
@@ -182,7 +188,7 @@ exports.updateLeaveStatus = async (req, res) => {
     const updated = await LeaveRequest.findById(id)
       .populate("employee")
       .populate("leaveType", "name")
-      .populate("reviewedBy", "name");
+      .populate("reviewedBy", "name email");
 
     res.json(updated);
 
@@ -199,7 +205,7 @@ exports.getLeaveRequests = async (req, res) => {
     const leaves = await LeaveRequest.find()
       .populate("employee")
       .populate("leaveType", "name")
-      .populate("reviewedBy", "name")
+      .populate("reviewedBy", "name email")
       .sort({ createdAt: -1 });
 
     res.json(leaves);

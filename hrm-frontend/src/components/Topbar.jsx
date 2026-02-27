@@ -11,6 +11,10 @@ export default function Topbar() {
     logout();
     navigate("/login");
   };
+  const openKioskAttendance = () => {
+    const kioskUrl = `${window.location.origin}/#/kiosk-face`;
+    window.open(kioskUrl, "_blank", "noopener,noreferrer");
+  };
 
   const navItems = [
     { to: "/", label: "Dashboard" },
@@ -51,6 +55,9 @@ export default function Topbar() {
               {role.toUpperCase()}
             </div>
           )}
+          <button style={styles.kioskButton} onClick={openKioskAttendance}>
+            Kiosk Attendance
+          </button>
           <button style={styles.profileButton} title="Profile">
             {payload?.name ? payload.name.split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase() : "JD"}
           </button>
@@ -96,6 +103,16 @@ const styles = {
     color: "#2f1f48",
   },
   logoutButton: {
+    backgroundColor: "#f3ecff",
+    color: "#3f2a5f",
+    padding: "6px 10px",
+    border: "1px solid #d9c8f6",
+    borderRadius: "8px",
+    fontSize: "13px",
+    fontWeight: "600",
+    cursor: "pointer",
+  },
+  kioskButton: {
     backgroundColor: "#f3ecff",
     color: "#3f2a5f",
     padding: "6px 10px",

@@ -1,6 +1,7 @@
 const Attendance = require("../models/Attendance");
 const Employee = require("../models/Employee");
 const axios = require("axios");
+const jwt = require("jsonwebtoken");
 const { resolveEmployeeScopeMatchValues } = require("../utils/resolveEmployeeScope");
 
 function getISTDateStart(now = new Date()) {
@@ -204,8 +205,22 @@ exports.markAttendanceByFace = async (req, res) => {
     const kioskSecret = process.env.KIOSK_FACE_KEY;
     if (kioskSecret) {
       const incomingKey = req.headers["x-kiosk-key"];
-      if (String(incomingKey || "") !== String(kioskSecret)) {
-        return res.status(401).json({ message: "Unauthorized kiosk request" });
+      const keyMatches = String(incomingKey || "") === String(kioskSecret);
+      if (!keyMatches) {
+        const authHeader = req.headers.authorization || "";
+        const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7).trim() : "";
+        let tokenValid = false;
+        if (token && process.env.JWT_SECRET) {
+          try {
+            jwt.verify(token, process.env.JWT_SECRET);
+            tokenValid = true;
+          } catch {
+            tokenValid = false;
+          }
+        }
+        if (!tokenValid) {
+          return res.status(401).json({ message: "Unauthorized kiosk request" });
+        }
       }
     }
     const requestedAction = String(action || "auto").toLowerCase();

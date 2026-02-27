@@ -11,6 +11,20 @@ function Leave({ token }) {
   const [canApproveLeaves, setCanApproveLeaves] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  const toDateTime = (value) => {
+    if (!value) return "-";
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return "-";
+    return d.toLocaleString("en-IN", {
+      year: "numeric",
+      month: "short",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
+  };
+
   useEffect(() => {
     const loadLeaveRequests = async () => {
       try {
@@ -76,6 +90,10 @@ function Leave({ token }) {
     }
   };
 
+  const pendingCount = leaveRequests.filter((l) => l.status === "pending").length;
+  const approvedCount = leaveRequests.filter((l) => l.status === "approved").length;
+  const rejectedCount = leaveRequests.filter((l) => l.status === "rejected").length;
+
   return (
     <div style={styles.container}>
       <div style={styles.pageHeader}>
@@ -104,23 +122,38 @@ function Leave({ token }) {
               You can only view leave request data.
             </p>
           )}
+          <div style={styles.metricsGrid}>
+            <div style={styles.metricCard}>
+              <div style={styles.metricLabel}>Pending</div>
+              <div style={styles.metricValue}>{pendingCount}</div>
+            </div>
+            <div style={styles.metricCard}>
+              <div style={styles.metricLabel}>Approved</div>
+              <div style={styles.metricValue}>{approvedCount}</div>
+            </div>
+            <div style={styles.metricCard}>
+              <div style={styles.metricLabel}>Rejected</div>
+              <div style={styles.metricValue}>{rejectedCount}</div>
+            </div>
+          </div>
         </div>
 
-        <div style={styles.card}>
+        <div style={{ ...styles.card, ...styles.scrollCard }}>
           <h3 style={styles.sectionTitle}>Leave Requests</h3>
 
           {leaveRequests.length > 0 ? (
-            <div style={{ overflowX: "auto" }}>
+            <div style={styles.horizontalScroll}>
               <table style={styles.table}>
                 <thead>
                   <tr>
                     <th style={styles.th}>Employee</th>
                     <th style={styles.th}>Type</th>
                     <th style={styles.th}>Dates</th>
+                    <th style={styles.th}>Reason</th>
                     <th style={styles.th}>Days</th>
                     <th style={styles.th}>Status</th>
                     <th style={styles.th}>Actions</th>
-                    <th style={styles.th}>Applied On</th>
+                    <th style={styles.th}>Logs</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -131,10 +164,22 @@ function Leave({ token }) {
                       <td style={styles.td}>
                         {formatDate(req.startDate)} - {formatDate(req.endDate)}
                       </td>
+                      <td style={styles.tdReason}>{req.reason || "-"}</td>
                       <td style={styles.td}>{req.totalDays}</td>
-                      <td style={styles.td}>{req.status}</td>
                       <td style={styles.td}>
-                        {canApproveLeaves ? (
+                        <span
+                          style={{
+                            ...styles.statusPill,
+                            ...(req.status === "approved" ? styles.statusApproved : {}),
+                            ...(req.status === "rejected" ? styles.statusRejected : {}),
+                            ...(req.status === "pending" ? styles.statusPending : {}),
+                          }}
+                        >
+                          {req.status}
+                        </span>
+                      </td>
+                      <td style={styles.td}>
+                        {canApproveLeaves && req.status === "pending" ? (
                           <div style={{ display: "flex", gap: 8 }}>
                             <button
                               disabled={loading}
@@ -152,10 +197,19 @@ function Leave({ token }) {
                             </button>
                           </div>
                         ) : (
-                          <span style={{ color: "#6b7280" }}>-</span>
+                          <span style={{ color: "#6b7280" }}>Finalized</span>
                         )}
                       </td>
-                      <td style={styles.td}>{formatDate(req.createdAt)}</td>
+                      <td style={styles.tdLog}>
+                        <div><strong>Applied:</strong> {toDateTime(req.createdAt)}</div>
+                        <div><strong>Reviewed:</strong> {toDateTime(req.reviewedAt)}</div>
+                        <div>
+                          <strong>By:</strong>{" "}
+                          {req.reviewedBy
+                            ? `${req.reviewedBy?.name || "-"}${req.reviewedBy?.email ? ` (${req.reviewedBy.email})` : ""}`
+                            : "-"}
+                        </div>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -197,11 +251,31 @@ const styles = {
   },
   grid: { display: "grid", gridTemplateColumns: "360px 1fr", gap: 20 },
   card: { background: "#f4eefb", padding: 16, borderRadius: 12, border: "1px solid #eee" },
+  scrollCard: { overflowX: "auto" },
+  horizontalScroll: { overflowX: "auto", width: "100%" },
   sectionTitle: { fontSize: 16, fontWeight: 600, marginBottom: 12 },
   noteText: { color: "#6b7280", margin: 0 },
-  table: { width: "100%", borderCollapse: "collapse" },
+  metricsGrid: { marginTop: 12, display: "grid", gridTemplateColumns: "1fr", gap: 8 },
+  metricCard: { background: "#fff", border: "1px solid #e4d8f4", borderRadius: 10, padding: 10 },
+  metricLabel: { fontSize: 12, color: "#6b7280" },
+  metricValue: { fontSize: 20, fontWeight: 700, color: "#3f2a5f" },
+  table: { width: "100%", minWidth: 1120, borderCollapse: "collapse" },
   th: { textAlign: "left", padding: 8, borderBottom: "1px solid #eee", color: "#6b7280" },
   td: { padding: 8, borderBottom: "1px solid #f3f3f3" },
+  tdReason: { padding: 8, borderBottom: "1px solid #f3f3f3", minWidth: 180, color: "#374151" },
+  tdLog: { padding: 8, borderBottom: "1px solid #f3f3f3", minWidth: 250, color: "#374151", fontSize: 12, lineHeight: 1.5 },
+  statusPill: {
+    display: "inline-block",
+    padding: "4px 10px",
+    borderRadius: 999,
+    fontSize: 12,
+    fontWeight: 700,
+    textTransform: "capitalize",
+    border: "1px solid transparent",
+  },
+  statusPending: { background: "#fff7ed", color: "#9a3412", borderColor: "#fed7aa" },
+  statusApproved: { background: "#ecfdf3", color: "#166534", borderColor: "#bbf7d0" },
+  statusRejected: { background: "#fef2f2", color: "#991b1b", borderColor: "#fecaca" },
   approveButton: {
     padding: "6px 8px",
     borderRadius: 8,
